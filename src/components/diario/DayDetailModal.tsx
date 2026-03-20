@@ -1,6 +1,7 @@
 ﻿import {
   Box,
   Button,
+  Divider,
   HStack,
   Modal,
   ModalBody,
@@ -16,7 +17,7 @@
 import { useMemo, useState } from "react";
 import { useAppContext } from "../../context/AppContext";
 import { calculateJournalEntryCalories } from "../../utils/calorieCalculations";
-import { formatLongDate } from "../../utils/date";
+import { formatLongDate, formatMonthKey } from "../../utils/date";
 import { DailyIngredientEntryCard } from "./DailyIngredientEntryCard";
 import { DailyRecipeEntryCard } from "./DailyRecipeEntryCard";
 
@@ -27,7 +28,7 @@ interface DayDetailModalProps {
 }
 
 export const DayDetailModal = ({ dateKey, isOpen, onClose }: DayDetailModalProps) => {
-  const { journalEntries, recipes, variants, addJournalIngredientEntry, addJournalRecipeEntry } = useAppContext();
+  const { journalEntries, recipes, variants, monthlyCalorieGoals, addJournalIngredientEntry, addJournalRecipeEntry } = useAppContext();
   const [selectedRecipeId, setSelectedRecipeId] = useState("");
 
   const entries = useMemo(
@@ -39,6 +40,18 @@ export const DayDetailModal = ({ dateKey, isOpen, onClose }: DayDetailModalProps
     () => entries.reduce((sum, entry) => sum + calculateJournalEntryCalories(entry, variants), 0),
     [entries, variants],
   );
+
+  const dateMonthKey = useMemo(() => {
+    if (!dateKey) {
+      return "";
+    }
+
+    const [year, month] = dateKey.split("-").map(Number);
+    return formatMonthKey(year, month - 1);
+  }, [dateKey]);
+
+  const dailyGoal = monthlyCalorieGoals[dateMonthKey] ?? 1600;
+  const remainingCalories = dailyGoal - totalCalories;
 
   if (!dateKey) {
     return null;
@@ -56,6 +69,12 @@ export const DayDetailModal = ({ dateKey, isOpen, onClose }: DayDetailModalProps
               <Text fontWeight="semibold">Total del día: {totalCalories.toFixed(2)} kcal</Text>
               <Text fontSize="sm" color="gray.600">
                 {entries.length} entrada{entries.length === 1 ? "" : "s"} registrada{entries.length === 1 ? "" : "s"}
+              </Text>
+              <Text fontSize="sm" color="gray.600">
+                Meta diaria del mes: {dailyGoal.toFixed(0)} kcal
+              </Text>
+              <Text fontSize="sm" color={remainingCalories >= 0 ? "green.700" : "red.500"}>
+                Calorías restantes: {remainingCalories.toFixed(2)} kcal
               </Text>
             </Box>
 
@@ -92,6 +111,8 @@ export const DayDetailModal = ({ dateKey, isOpen, onClose }: DayDetailModalProps
                 </Button>
               </HStack>
             </Stack>
+
+            <Divider />
 
             <VStack align="stretch" spacing={4}>
               {entries.length === 0 ? (

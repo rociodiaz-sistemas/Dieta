@@ -2,36 +2,49 @@
 import { useMemo } from "react";
 import { useAppContext } from "../../context/AppContext";
 import { Recipe } from "../../types/models";
-import { convertToBaseUnit } from "../../utils/unitConversion";
+import { calculateRecipeCalories } from "../../utils/calorieCalculations";
 
 interface RecipeListProps {
   onEdit: (recipe: Recipe) => void;
+  onAddToToday: (recipeId: string) => void;
+  searchTerm: string;
+  minCalories: number | "";
+  maxCalories: number | "";
+  remainingCalories: number;
+  calorieAwareOnly: boolean;
 }
 
-export const RecipeList = ({ onEdit }: RecipeListProps) => {
+export const RecipeList = ({
+  onEdit,
+  onAddToToday,
+  searchTerm,
+  minCalories,
+  maxCalories,
+  remainingCalories,
+  calorieAwareOnly,
+}: RecipeListProps) => {
   const { recipes, ingredients, variants, deleteRecipe } = useAppContext();
 
   const totals = useMemo(() => {
     return recipes.reduce<Record<string, number>>((accumulator, recipe) => {
-      const total = recipe.ingredientes.reduce((sum, recipeIngredient) => {
-        const variant = variants.find((candidate) => candidate.id === recipeIngredient.variantId);
-        if (!variant || recipeIngredient.cantidad === "") {
-          return sum;
-        }
-
-        const convertedAmount = convertToBaseUnit(Number(recipeIngredient.cantidad), recipeIngredient.unidad, variant.unidadBase);
-
-        if (convertedAmount === null) {
-          return sum;
-        }
-
-        return sum + (variant.calorias * convertedAmount) / variant.cantidadBase;
-      }, 0);
-
-      accumulator[recipe.id] = total;
+      accumulator[recipe.id] = calculateRecipeCalories(recipe, variants);
       return accumulator;
     }, {});
   }, [recipes, variants]);
+
+  const filteredRecipes = useMemo(() => {
+    const loweredSearch = searchTerm.trim().toLowerCase();
+
+    return recipes.filter((recipe) => {
+      const total = totals[recipe.id] ?? 0;
+      const matchesSearch = loweredSearch.length === 0 || recipe.nombre.toLowerCase().includes(loweredSearch);
+      const matchesMin = minCalories === "" || total >= minCalories;
+      const matchesMax = maxCalories === "" || total <= maxCalories;
+      const matchesRemaining = !calorieAwareOnly || total <= remainingCalories;
+
+      return matchesSearch && matchesMin && matchesMax && matchesRemaining;
+    });
+  }, [calorieAwareOnly, maxCalories, minCalories, recipes, remainingCalories, searchTerm, totals]);
 
   if (recipes.length === 0) {
     return (
@@ -41,9 +54,17 @@ export const RecipeList = ({ onEdit }: RecipeListProps) => {
     );
   }
 
+  if (filteredRecipes.length === 0) {
+    return (
+      <Box bg="white" borderWidth="1px" rounded="xl" p={6}>
+        <Text color="gray.500">No hay recetas que coincidan con la búsqueda, el rango o las calorías restantes de hoy.</Text>
+      </Box>
+    );
+  }
+
   return (
     <Stack spacing={4}>
-      {recipes.map((recipe) => (
+      {filteredRecipes.map((recipe) => (
         <Box key={recipe.id} bg="white" borderWidth="1px" rounded="xl" p={5}>
           <Heading size="sm" mb={3}>
             {recipe.nombre}
@@ -67,7 +88,10 @@ export const RecipeList = ({ onEdit }: RecipeListProps) => {
           <Text fontWeight="semibold" color="brand.700" mb={4}>
             Total: {totals[recipe.id]?.toFixed(2) ?? "0.00"} calorías
           </Text>
-          <HStack>
+          <HStack flexWrap="wrap">
+            <Button size="sm" colorScheme="green" onClick={() => onAddToToday(recipe.id)}>
+              Agregar al día actual
+            </Button>
             <Button size="sm" variant="outline" onClick={() => onEdit(recipe)}>
               Editar
             </Button>
