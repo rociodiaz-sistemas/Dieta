@@ -1,19 +1,19 @@
 ﻿import { Box, Grid, GridItem, HStack, IconButton, Text, VStack } from "@chakra-ui/react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 import { CalendarDayCell } from "./CalendarDayCell";
-import { WEEKDAY_NAMES, buildCalendarDays, formatDateKey, getMonthLabel } from "../../utils/date";
+import { WEEKDAY_NAMES, buildCalendarDays, formatDateKey, formatMonthKey, getMonthLabel } from "../../utils/date";
 
 interface CalendarGridProps {
   year: number;
   month: number;
   todayKey: string;
-  dailyGoal: number;
+  monthlyGoals: Record<string, number>;
   dayStats: Record<string, { totalCalories: number; entryCount: number }>;
   onMonthChange: (payload: { year: number; month: number }) => void;
   onDayClick: (dateKey: string) => void;
 }
 
-export const CalendarGrid = ({ year, month, todayKey, dailyGoal, dayStats, onMonthChange, onDayClick }: CalendarGridProps) => {
+export const CalendarGrid = ({ year, month, todayKey, monthlyGoals, dayStats, onMonthChange, onDayClick }: CalendarGridProps) => {
   const days = buildCalendarDays(year, month);
 
   return (
@@ -53,8 +53,10 @@ export const CalendarGrid = ({ year, month, todayKey, dailyGoal, dayStats, onMon
           ))}
           {days.map((day) => {
             const dateKey = formatDateKey(day);
+            const monthKey = formatMonthKey(day.getFullYear(), day.getMonth());
+            const monthGoal = monthlyGoals[monthKey] ?? 1600;
             const stats = dayStats[dateKey] ?? { totalCalories: 0, entryCount: 0 };
-            const status = stats.entryCount === 0 ? "sin-registro" : stats.totalCalories > dailyGoal ? "exceso" : "dentro-meta";
+            const status = stats.entryCount === 0 ? "sin-registro" : stats.totalCalories > monthGoal ? "exceso" : "dentro-meta";
 
             return (
               <CalendarDayCell

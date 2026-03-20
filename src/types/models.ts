@@ -62,7 +62,7 @@ export interface AppData {
   variants: IngredientVariant[];
   recipes: Recipe[];
   journalEntries: JournalEntry[];
-  dailyCalorieGoal: number;
+  monthlyCalorieGoals: Record<string, number>;
 }
 
 export interface IngredientFormValues {

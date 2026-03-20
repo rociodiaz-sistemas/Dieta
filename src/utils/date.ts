@@ -22,10 +22,14 @@ export const formatDateKey = (date: Date) => {
   return `${year}-${month}-${day}`;
 };
 
+export const formatMonthKey = (year: number, month: number) => `${year}-${String(month + 1).padStart(2, "0")}`;
+
 export const parseDateKey = (dateKey: string) => {
   const [year, month, day] = dateKey.split("-").map(Number);
   return new Date(year, month - 1, day);
 };
+
+export const getMonthName = (month: number) => MONTH_NAMES[month];
 
 export const getMonthLabel = (year: number, month: number) => `${MONTH_NAMES[month]} ${year}`;
 

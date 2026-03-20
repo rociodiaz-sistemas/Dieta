@@ -115,5 +115,5 @@ export const INITIAL_DATA: AppData = {
   ],
   recipes: [],
   journalEntries: [],
-  dailyCalorieGoal: 1600,
+  monthlyCalorieGoals: {},
 };

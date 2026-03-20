@@ -1,11 +1,11 @@
-﻿import { Box, FormControl, FormLabel, Heading, Input, Stack, Text, useDisclosure } from "@chakra-ui/react";
+﻿import { Box, FormControl, FormHelperText, FormLabel, Heading, Input, Stack, Text, useDisclosure } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
 import { CalendarGrid } from "../components/diario/CalendarGrid";
 import { DayDetailModal } from "../components/diario/DayDetailModal";
 import { PageContainer } from "../components/PageContainer";
 import { useAppContext } from "../context/AppContext";
 import { calculateJournalEntryCalories } from "../utils/calorieCalculations";
-import { formatDateKey } from "../utils/date";
+import { formatDateKey, formatMonthKey, getMonthName } from "../utils/date";
 
 export const DiarioCaloriasPage = () => {
   const today = new Date();
@@ -16,7 +16,10 @@ export const DiarioCaloriasPage = () => {
   });
   const [selectedDate, setSelectedDate] = useState<string | null>(todayKey);
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { journalEntries, variants, dailyCalorieGoal, setDailyCalorieGoal } = useAppContext();
+  const { journalEntries, variants, monthlyCalorieGoals, setMonthlyCalorieGoal } = useAppContext();
+
+  const visibleMonthKey = formatMonthKey(visibleMonth.year, visibleMonth.month);
+  const visibleMonthGoal = monthlyCalorieGoals[visibleMonthKey] ?? 1600;
 
   const dayStats = useMemo(() => {
     return journalEntries.reduce<Record<string, { totalCalories: number; entryCount: number }>>((accumulator, entry) => {
@@ -40,15 +43,18 @@ export const DiarioCaloriasPage = () => {
         </Stack>
 
         <Box bg="white" borderWidth="1px" rounded="xl" p={5}>
-          <FormControl maxW="280px">
-            <FormLabel>Meta diaria de calorías</FormLabel>
+          <FormControl maxW="320px">
+            <FormLabel>Meta diaria del mes (kcal)</FormLabel>
             <Input
               type="number"
               min={0}
-              value={dailyCalorieGoal}
-              onChange={(event) => setDailyCalorieGoal(Number(event.target.value) || 0)}
+              value={visibleMonthGoal}
+              onChange={(event) => setMonthlyCalorieGoal(visibleMonthKey, Number(event.target.value) || 0)}
               bg="white"
             />
+            <FormHelperText>
+              Meta diaria para {getMonthName(visibleMonth.month).toLowerCase()}.
+            </FormHelperText>
           </FormControl>
         </Box>
 
@@ -56,7 +62,7 @@ export const DiarioCaloriasPage = () => {
           year={visibleMonth.year}
           month={visibleMonth.month}
           todayKey={todayKey}
-          dailyGoal={dailyCalorieGoal}
+          monthlyGoals={monthlyCalorieGoals}
           dayStats={dayStats}
           onMonthChange={setVisibleMonth}
           onDayClick={(dateKey) => {

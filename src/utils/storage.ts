@@ -1,5 +1,6 @@
 ﻿import { AppData, IngredientNode, IngredientVariant, JournalEntry, Recipe, RecipeIngredient } from "../types/models";
 import { DEFAULT_VARIANT_NAME } from "./constants";
+import { formatMonthKey } from "./date";
 import { createId } from "./id";
 
 const STORAGE_KEY = "dieta-app-data";
@@ -119,6 +120,15 @@ const normalizeAppData = (raw: unknown): AppData | null => {
     }
   });
 
+  const currentMonthKey = formatMonthKey(new Date().getFullYear(), new Date().getMonth());
+  const monthlyCalorieGoals =
+    source.monthlyCalorieGoals && typeof source.monthlyCalorieGoals === "object"
+      ? Object.entries(source.monthlyCalorieGoals as Record<string, unknown>).reduce<Record<string, number>>((accumulator, [key, value]) => {
+          accumulator[key] = Number(value ?? 1600);
+          return accumulator;
+        }, {})
+      : { [currentMonthKey]: Number(source.dailyCalorieGoal ?? 1600) };
+
   return {
     categories: categories as AppData["categories"],
     ingredients: normalizedIngredients,
@@ -127,7 +137,7 @@ const normalizeAppData = (raw: unknown): AppData | null => {
     journalEntries: journalEntries
       .map((entry) => normalizeJournalEntry(entry as Record<string, unknown>))
       .filter((entry): entry is JournalEntry => Boolean(entry)),
-    dailyCalorieGoal: Number(source.dailyCalorieGoal ?? 1600),
+    monthlyCalorieGoals,
   };
 };
 
