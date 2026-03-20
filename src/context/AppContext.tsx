@@ -10,9 +10,9 @@ import {
   RecipeIngredient,
   VariantFormValues,
 } from "../types/models";
+import { loadAppData, saveAppData } from "../db/appRepository";
 import { DEFAULT_VARIANT_NAME, INITIAL_DATA, UNIT_OPTIONS } from "../utils/constants";
 import { createId } from "../utils/id";
-import { loadAppData, saveAppData } from "../utils/storage";
 import { collectCategoryAndDescendants } from "../utils/tree";
 
 interface AppContextValue extends AppData {
@@ -50,11 +50,43 @@ const cloneRecipe = (recipe: Recipe): Recipe => ({
 });
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const [data, setData] = useState<AppData>(() => loadAppData() ?? INITIAL_DATA);
+  const [data, setData] = useState<AppData>(INITIAL_DATA);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    saveAppData(data);
-  }, [data]);
+    let isMounted = true;
+
+    const hydrate = async () => {
+      try {
+        const persistedData = await loadAppData();
+        if (isMounted) {
+          setData(persistedData);
+          setIsHydrated(true);
+        }
+      } catch (error) {
+        console.error("No se pudo cargar la base de datos local", error);
+        if (isMounted) {
+          setIsHydrated(true);
+        }
+      }
+    };
+
+    void hydrate();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isHydrated) {
+      return;
+    }
+
+    void saveAppData(data).catch((error) => {
+      console.error("No se pudo guardar la base de datos local", error);
+    });
+  }, [data, isHydrated]);
 
   const createEmptyRecipeIngredient = () => ({
     id: createId(),
