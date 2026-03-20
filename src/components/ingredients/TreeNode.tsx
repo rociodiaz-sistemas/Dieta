@@ -1,5 +1,16 @@
-﻿import { Box, Button, Heading, HStack, Input, Text, VStack } from "@chakra-ui/react";
-import { useState } from "react";
+﻿import {
+  Box,
+  Button,
+  Collapse,
+  HStack,
+  Icon,
+  IconButton,
+  Input,
+  Text,
+  VStack,
+} from "@chakra-ui/react";
+import { ChevronDownIcon, ChevronRightIcon } from "@chakra-ui/icons";
+import { useMemo, useState } from "react";
 import { useAppContext } from "../../context/AppContext";
 import { CategoryNode } from "../../types/models";
 import { getChildCategories, getChildIngredients } from "../../utils/tree";
@@ -10,9 +21,18 @@ import { IngredientNodeCard } from "./IngredientNodeCard";
 interface TreeNodeProps {
   category: CategoryNode;
   depth?: number;
+  selectedItem: { id: string; tipo: "categoria" | "ingrediente" } | null;
+  onSelect: (
+    item: { id: string; tipo: "categoria" | "ingrediente" } | null,
+  ) => void;
 }
 
-export const TreeNode = ({ category, depth = 0 }: TreeNodeProps) => {
+export const TreeNode = ({
+  category,
+  depth = 0,
+  selectedItem,
+  onSelect,
+}: TreeNodeProps) => {
   const {
     categories,
     ingredients,
@@ -32,121 +52,228 @@ export const TreeNode = ({ category, depth = 0 }: TreeNodeProps) => {
 
   const childCategories = getChildCategories(categories, category.id);
   const childIngredients = getChildIngredients(ingredients, category.id);
+  const hasChildren = childCategories.length > 0 || childIngredients.length > 0;
+  const isSelected =
+    selectedItem?.tipo === "categoria" && selectedItem.id === category.id;
+  const indentation = useMemo(() => depth * 14, [depth]);
+
+  const rowStyles = {
+    bg: isSelected ? "green.50" : "transparent",
+    borderColor: isSelected ? "green.200" : "transparent",
+    _hover: {
+      bg: isSelected ? "green.50" : "gray.50",
+      borderColor: isSelected ? "green.200" : "gray.200",
+    },
+  };
 
   return (
-    <Box pl={depth === 0 ? 0 : 4} borderLeftWidth={depth === 0 ? 0 : "2px"} borderColor="gray.200">
-      <Box bg="white" borderWidth="1px" rounded="xl" p={4} shadow="sm">
-        <VStack align="stretch" spacing={3}>
-          <HStack justify="space-between" align={{ base: "stretch", md: "center" }} flexWrap="wrap">
-            <HStack align="center" flexWrap="wrap">
-              <Button size="xs" variant="outline" onClick={() => setIsExpanded((current) => !current)}>
-                {isExpanded ? "Ocultar" : "Expandir"}
-              </Button>
-              {isEditingName ? (
-                <HStack>
-                  <Input
-                    size="sm"
-                    value={draftName}
-                    onChange={(event) => setDraftName(event.target.value)}
-                    bg="white"
-                  />
-                  <Button
-                    size="sm"
-                    colorScheme="green"
-                    onClick={() => {
-                      const trimmed = draftName.trim();
-                      if (trimmed) {
-                        updateCategory(category.id, trimmed);
-                      }
-                      setIsEditingName(false);
-                    }}
-                  >
-                    Guardar
-                  </Button>
-                </HStack>
+    <Box>
+      <Box pl={`${indentation}px`}>
+        <HStack
+          spacing={2}
+          w="full"
+          px={2}
+          py={2}
+          rounded="md"
+          borderWidth="1px"
+          cursor="pointer"
+          transition="all 0.2s ease"
+          align="center"
+          {...rowStyles}
+          onClick={() => {
+            onSelect({ id: category.id, tipo: "categoria" });
+            if (hasChildren) {
+              setIsExpanded((current) => !current);
+            }
+          }}
+        >
+          <IconButton
+            aria-label={
+              isExpanded ? "Contraer categoría" : "Expandir categoría"
+            }
+            icon={
+              hasChildren ? (
+                <Icon
+                  as={isExpanded ? ChevronDownIcon : ChevronRightIcon}
+                  boxSize={5}
+                />
               ) : (
-                <Heading size="sm">{category.nombre}</Heading>
-              )}
-            </HStack>
+                <Box w={5} />
+              )
+            }
+            size="xs"
+            variant="ghost"
+            onClick={(event) => {
+              event.stopPropagation();
+              if (hasChildren) {
+                setIsExpanded((current) => !current);
+              }
+            }}
+          />
 
-            <HStack flexWrap="wrap">
-              {!isEditingName ? (
-                <Button size="xs" variant="ghost" onClick={() => setIsEditingName(true)}>
-                  Editar
-                </Button>
-              ) : null}
-              <Button
-                size="xs"
-                variant="outline"
-                colorScheme="green"
-                onClick={() => setShowCategoryForm((current) => !current)}
-              >
-                Agregar subcategoría
-              </Button>
-              <Button
-                size="xs"
-                variant="outline"
-                colorScheme="green"
-                onClick={() => setShowIngredientForm((current) => !current)}
-              >
-                Agregar ingrediente
-              </Button>
-              <Button size="xs" variant="outline" colorScheme="red" onClick={() => deleteCategory(category.id)}>
-                Eliminar
-              </Button>
-            </HStack>
-          </HStack>
+          <Box
+            w="12px"
+            h="10px"
+            rounded="sm"
+            bg={hasChildren ? "yellow.400" : "yellow.300"}
+            borderWidth="1px"
+            borderColor="yellow.600"
+            flexShrink={0}
+          />
 
-          {showCategoryForm ? (
-            <CategoryForm
-              placeholder="Nombre de la subcategoría"
-              buttonLabel="Guardar subcategoría"
-              onSubmit={(name) => {
-                addCategory(category.id, name);
-                setShowCategoryForm(false);
-              }}
-            />
-          ) : null}
-
-          {showIngredientForm ? (
-            <Box borderWidth="1px" borderColor="gray.200" rounded="lg" p={4} bg="gray.50">
-              <IngredientForm
-                unitOptions={unitOptions}
-                submitLabel="Guardar ingrediente"
-                onSubmit={(values) => {
-                  addIngredient(category.id, values);
-                  setShowIngredientForm(false);
-                }}
+          {isEditingName ? (
+            <HStack flex="1" onClick={(event) => event.stopPropagation()}>
+              <Input
+                size="sm"
+                value={draftName}
+                onChange={(event) => setDraftName(event.target.value)}
+                bg="white"
               />
-            </Box>
-          ) : null}
+              <Button
+                size="sm"
+                colorScheme="green"
+                onClick={() => {
+                  const trimmed = draftName.trim();
+                  if (trimmed) {
+                    updateCategory(category.id, trimmed);
+                  }
+                  setIsEditingName(false);
+                }}
+              >
+                Guardar
+              </Button>
+            </HStack>
+          ) : (
+            <Text
+              flex="1"
+              fontWeight={isSelected ? "semibold" : "medium"}
+              color="gray.800"
+            >
+              {category.nombre}
+            </Text>
+          )}
 
-          {isExpanded ? (
-            <VStack align="stretch" spacing={3}>
-              {childCategories.length === 0 && childIngredients.length === 0 ? (
-                <Text fontSize="sm" color="gray.500">
-                  No hay subcategorías ni ingredientes en este nivel.
-                </Text>
-              ) : null}
+          <HStack spacing={2} onClick={(event) => event.stopPropagation()}>
+            {!isEditingName ? (
+              <Button
+                size="xs"
+                variant="ghost"
+                onClick={() => setIsEditingName(true)}
+              >
+                Editar
+              </Button>
+            ) : null}
+            <Button
+              size="xs"
+              variant="ghost"
+              colorScheme="green"
+              onClick={() => setShowCategoryForm((current) => !current)}
+            >
+              Agregar subcategoría
+            </Button>
+            <Button
+              size="xs"
+              variant="ghost"
+              colorScheme="green"
+              onClick={() => setShowIngredientForm((current) => !current)}
+            >
+              Agregar ingrediente
+            </Button>
+            <Button
+              size="xs"
+              variant="ghost"
+              colorScheme="red"
+              onClick={() => deleteCategory(category.id)}
+            >
+              Eliminar
+            </Button>
+          </HStack>
+        </HStack>
+      </Box>
 
-              {childCategories.map((childCategory) => (
-                <TreeNode key={childCategory.id} category={childCategory} depth={depth + 1} />
-              ))}
+      <Collapse in={showCategoryForm} animateOpacity>
+        <Box ml={`${indentation + 52}px`} mt={2} mb={2}>
+          <CategoryForm
+            placeholder="Nombre de la subcategoría"
+            buttonLabel="Guardar subcategoría"
+            onSubmit={(name) => {
+              addCategory(category.id, name);
+              setShowCategoryForm(false);
+              setIsExpanded(true);
+            }}
+          />
+        </Box>
+      </Collapse>
 
-              {childIngredients.map((ingredient) => (
-                <Box key={ingredient.id} pl={4}>
+      <Collapse in={showIngredientForm} animateOpacity>
+        <Box
+          ml={`${indentation + 52}px`}
+          mt={2}
+          mb={2}
+          borderWidth="1px"
+          borderColor="gray.200"
+          rounded="lg"
+          p={4}
+          bg="gray.50"
+        >
+          <IngredientForm
+            unitOptions={unitOptions}
+            submitLabel="Guardar ingrediente"
+            onSubmit={(values) => {
+              addIngredient(category.id, values);
+              setShowIngredientForm(false);
+              setIsExpanded(true);
+            }}
+          />
+        </Box>
+      </Collapse>
+
+      <Collapse in={isExpanded} animateOpacity>
+        <Box
+          ml={`${indentation + 14}px`}
+          pl={2}
+          borderLeftWidth={depth >= 0 ? "1px" : "0"}
+          borderColor="gray.200"
+        >
+          <VStack align="stretch" spacing={1} py={1}>
+            {hasChildren ? (
+              <>
+                {childCategories.map((childCategory) => (
+                  <TreeNode
+                    key={childCategory.id}
+                    category={childCategory}
+                    depth={depth + 1}
+                    selectedItem={selectedItem}
+                    onSelect={onSelect}
+                  />
+                ))}
+
+                {childIngredients.map((ingredient) => (
                   <IngredientNodeCard
+                    key={ingredient.id}
                     ingredient={ingredient}
                     unitOptions={unitOptions}
+                    depth={depth + 1}
+                    isSelected={
+                      selectedItem?.tipo === "ingrediente" &&
+                      selectedItem.id === ingredient.id
+                    }
+                    onSelect={() =>
+                      onSelect({ id: ingredient.id, tipo: "ingrediente" })
+                    }
                     onSave={(values) => updateIngredient(ingredient.id, values)}
                     onDelete={() => deleteIngredient(ingredient.id)}
                   />
-                </Box>
-              ))}
-            </VStack>
-          ) : null}
-        </VStack>
-      </Box>
+                ))}
+              </>
+            ) : (
+              <Text fontSize="sm" color="gray.500" px={2} py={2}>
+                Carpeta vacía.
+              </Text>
+            )}
+          </VStack>
+        </Box>
+      </Collapse>
     </Box>
   );
 };

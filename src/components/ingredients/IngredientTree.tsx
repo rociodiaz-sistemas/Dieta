@@ -31,6 +31,7 @@ export const IngredientTree = () => {
   const { categories, ingredients, addCategory } = useAppContext();
   const [showRootForm, setShowRootForm] = useState(false);
   const [search, setSearch] = useState("");
+  const [selectedItem, setSelectedItem] = useState<{ id: string; tipo: "categoria" | "ingrediente" } | null>(null);
 
   const rootCategories = categories.filter((category) => category.parentId === null);
   const lowered = search.trim().toLowerCase();
@@ -51,7 +52,7 @@ export const IngredientTree = () => {
             Estructura jerárquica
           </Heading>
           <Text color="gray.600" fontSize="sm">
-            Creá categorías anidadas sin límite y agregá ingredientes finales con calorías, unidad base y notas.
+            Explorá la jerarquía como carpetas y archivos, con expansión por clic y niveles bien indentados.
           </Text>
         </Box>
         <Box bg="white" p={5} rounded="xl" borderWidth="1px">
@@ -85,15 +86,24 @@ export const IngredientTree = () => {
         ) : null}
       </Box>
 
-      <VStack align="stretch" spacing={4}>
-        {filteredCategories.length === 0 ? (
-          <Box bg="white" borderWidth="1px" rounded="xl" p={6}>
-            <Text color="gray.500">No se encontraron categorías para la búsqueda actual.</Text>
-          </Box>
-        ) : (
-          filteredCategories.map((category) => <TreeNode key={category.id} category={category} />)
-        )}
-      </VStack>
+      <Box bg="white" borderWidth="1px" rounded="xl" p={4}>
+        <VStack align="stretch" spacing={1}>
+          {filteredCategories.length === 0 ? (
+            <Box rounded="lg" px={4} py={6}>
+              <Text color="gray.500">No se encontraron categorías para la búsqueda actual.</Text>
+            </Box>
+          ) : (
+            filteredCategories.map((category) => (
+              <TreeNode
+                key={category.id}
+                category={category}
+                selectedItem={selectedItem}
+                onSelect={setSelectedItem}
+              />
+            ))
+          )}
+        </VStack>
+      </Box>
     </VStack>
   );
 };
