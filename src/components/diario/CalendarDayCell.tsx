@@ -27,13 +27,13 @@ export const CalendarDayCell = ({
         rounded="xl"
         borderWidth="1px"
         borderColor={
-          isToday ? "green.500" : hasEntries ? "#dff94e" : "gray.200"
+          isToday ? "blue.500" : hasEntries ? "yellow.500" : "gray.200"
         }
         bg={
           isToday
-            ? "green.100"
+            ? "blue.100"
             : hasEntries
-              ? "#e5f1a345"
+              ? "yellow.100"
               : isCurrentMonth
                 ? "white"
                 : "gray.100"
