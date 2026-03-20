@@ -1,4 +1,4 @@
-﻿import { AppData, IngredientNode, IngredientVariant, RecipeIngredient } from "../types/models";
+﻿import { AppData, IngredientNode, IngredientVariant, JournalEntry, Recipe, RecipeIngredient } from "../types/models";
 import { DEFAULT_VARIANT_NAME } from "./constants";
 import { createId } from "./id";
 
@@ -13,6 +13,49 @@ const normalizeRecipeIngredient = (item: Record<string, unknown>): RecipeIngredi
   unidad: typeof item.unidad === "string" ? item.unidad : "g",
 });
 
+const normalizeRecipe = (item: Record<string, unknown>): Recipe => {
+  const ingredientes = Array.isArray(item.ingredientes) ? item.ingredientes : [];
+
+  return {
+    id: String(item.id ?? createId()),
+    nombre: String(item.nombre ?? ""),
+    ingredientes: ingredientes.map((recipeIngredient) =>
+      normalizeRecipeIngredient(recipeIngredient as Record<string, unknown>),
+    ),
+  };
+};
+
+const normalizeJournalEntry = (entry: Record<string, unknown>): JournalEntry | null => {
+  const tipo = entry.tipo;
+  const fecha = typeof entry.fecha === "string" ? entry.fecha : "";
+  const id = String(entry.id ?? createId());
+
+  if (!fecha) {
+    return null;
+  }
+
+  if (tipo === "ingrediente") {
+    return {
+      id,
+      tipo: "ingrediente",
+      fecha,
+      item: normalizeRecipeIngredient((entry.item as Record<string, unknown>) ?? {}),
+    };
+  }
+
+  if (tipo === "receta") {
+    return {
+      id,
+      tipo: "receta",
+      fecha,
+      recipeId: typeof entry.recipeId === "string" ? entry.recipeId : null,
+      recipe: normalizeRecipe((entry.recipe as Record<string, unknown>) ?? {}),
+    };
+  }
+
+  return null;
+};
+
 const normalizeAppData = (raw: unknown): AppData | null => {
   if (!raw || typeof raw !== "object") {
     return null;
@@ -23,6 +66,7 @@ const normalizeAppData = (raw: unknown): AppData | null => {
   const rawIngredients = Array.isArray(source.ingredients) ? source.ingredients : [];
   const rawVariants = Array.isArray(source.variants) ? source.variants : [];
   const recipes = Array.isArray(source.recipes) ? source.recipes : [];
+  const journalEntries = Array.isArray(source.journalEntries) ? source.journalEntries : [];
 
   const normalizedIngredients: IngredientNode[] = rawIngredients.map((ingredient) => {
     const item = ingredient as Record<string, unknown>;
@@ -79,18 +123,10 @@ const normalizeAppData = (raw: unknown): AppData | null => {
     categories: categories as AppData["categories"],
     ingredients: normalizedIngredients,
     variants: ensuredVariants,
-    recipes: recipes.map((recipe) => {
-      const item = recipe as Record<string, unknown>;
-      const ingredientes = Array.isArray(item.ingredientes) ? item.ingredientes : [];
-
-      return {
-        id: String(item.id ?? createId()),
-        nombre: String(item.nombre ?? ""),
-        ingredientes: ingredientes.map((recipeIngredient) =>
-          normalizeRecipeIngredient(recipeIngredient as Record<string, unknown>),
-        ),
-      };
-    }),
+    recipes: recipes.map((recipe) => normalizeRecipe(recipe as Record<string, unknown>)),
+    journalEntries: journalEntries
+      .map((entry) => normalizeJournalEntry(entry as Record<string, unknown>))
+      .filter((entry): entry is JournalEntry => Boolean(entry)),
   };
 };
 

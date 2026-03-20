@@ -6,6 +6,7 @@ import {
   IngredientFormValues,
   IngredientNode,
   IngredientVariant,
+  JournalEntry,
   Recipe,
   RecipeIngredient,
   VariantFormValues,
@@ -28,10 +29,25 @@ interface AppContextValue extends AppData {
   deleteVariant: (id: string) => void;
   saveRecipe: (recipe: Recipe) => void;
   deleteRecipe: (id: string) => void;
+  addJournalIngredientEntry: (date: string) => void;
+  addJournalRecipeEntry: (date: string, recipeId: string) => void;
+  updateJournalIngredientEntry: (entryId: string, item: RecipeIngredient) => void;
+  updateJournalRecipeEntry: (entryId: string, recipe: Recipe) => void;
+  deleteJournalEntry: (entryId: string) => void;
   createEmptyRecipeIngredient: () => RecipeIngredient;
 }
 
 const AppContext = createContext<AppContextValue | undefined>(undefined);
+
+const cloneRecipe = (recipe: Recipe): Recipe => ({
+  id: createId(),
+  nombre: recipe.nombre,
+  ingredientes: recipe.ingredientes.map((item) => ({
+    ...item,
+    id: createId(),
+    path: [...item.path],
+  })),
+});
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [data, setData] = useState<AppData>(() => loadAppData() ?? INITIAL_DATA);
@@ -39,6 +55,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     saveAppData(data);
   }, [data]);
+
+  const createEmptyRecipeIngredient = () => ({
+    id: createId(),
+    ingredientId: null,
+    variantId: null,
+    path: [],
+    cantidad: "" as const,
+    unidad: "g",
+  });
 
   const value = useMemo<AppContextValue>(
     () => ({
@@ -87,6 +112,26 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                   : recipeIngredient,
               ),
             })),
+            journalEntries: current.journalEntries
+              .map((entry) => {
+                if (entry.tipo === "ingrediente") {
+                  return removedIngredientIds.includes(entry.item.ingredientId ?? "")
+                    ? { ...entry, item: { ...entry.item, ingredientId: null, variantId: null, path: [] } }
+                    : entry;
+                }
+
+                return {
+                  ...entry,
+                  recipe: {
+                    ...entry.recipe,
+                    ingredientes: entry.recipe.ingredientes.map((recipeIngredient) =>
+                      removedIngredientIds.includes(recipeIngredient.ingredientId ?? "")
+                        ? { ...recipeIngredient, ingredientId: null, variantId: null, path: [] }
+                        : recipeIngredient,
+                    ),
+                  },
+                };
+              }),
           };
         });
       },
@@ -146,6 +191,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                   : recipeIngredient,
               ),
             })),
+            journalEntries: current.journalEntries.map((entry) => {
+              if (entry.tipo === "ingrediente") {
+                return entry.item.ingredientId === id || removedVariantIds.includes(entry.item.variantId ?? "")
+                  ? { ...entry, item: { ...entry.item, ingredientId: null, variantId: null, path: [] } }
+                  : entry;
+              }
+
+              return {
+                ...entry,
+                recipe: {
+                  ...entry.recipe,
+                  ingredientes: entry.recipe.ingredientes.map((recipeIngredient) =>
+                    recipeIngredient.ingredientId === id || removedVariantIds.includes(recipeIngredient.variantId ?? "")
+                      ? { ...recipeIngredient, ingredientId: null, variantId: null, path: [] }
+                      : recipeIngredient,
+                  ),
+                },
+              };
+            }),
           };
         });
       },
@@ -203,6 +267,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                   : recipeIngredient,
               ),
             })),
+            journalEntries: current.journalEntries.map((entry) => {
+              if (entry.tipo === "ingrediente") {
+                return entry.item.variantId === id
+                  ? { ...entry, item: { ...entry.item, variantId: null } }
+                  : entry;
+              }
+
+              return {
+                ...entry,
+                recipe: {
+                  ...entry.recipe,
+                  ingredientes: entry.recipe.ingredientes.map((recipeIngredient) =>
+                    recipeIngredient.variantId === id
+                      ? { ...recipeIngredient, variantId: null }
+                      : recipeIngredient,
+                  ),
+                },
+              };
+            }),
           };
         });
       },
@@ -223,14 +306,69 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           recipes: current.recipes.filter((recipe) => recipe.id !== id),
         }));
       },
-      createEmptyRecipeIngredient: () => ({
-        id: createId(),
-        ingredientId: null,
-        variantId: null,
-        path: [],
-        cantidad: "",
-        unidad: "g",
-      }),
+      addJournalIngredientEntry: (date) => {
+        setData((current) => ({
+          ...current,
+          journalEntries: [
+            ...current.journalEntries,
+            {
+              id: createId(),
+              tipo: "ingrediente",
+              fecha: date,
+              item: createEmptyRecipeIngredient(),
+            },
+          ],
+        }));
+      },
+      addJournalRecipeEntry: (date, recipeId) => {
+        setData((current) => {
+          const baseRecipe = current.recipes.find((recipe) => recipe.id === recipeId);
+          if (!baseRecipe) {
+            return current;
+          }
+
+          return {
+            ...current,
+            journalEntries: [
+              ...current.journalEntries,
+              {
+                id: createId(),
+                tipo: "receta",
+                fecha: date,
+                recipeId,
+                recipe: cloneRecipe(baseRecipe),
+              },
+            ],
+          };
+        });
+      },
+      updateJournalIngredientEntry: (entryId, item) => {
+        setData((current) => ({
+          ...current,
+          journalEntries: current.journalEntries.map((entry) =>
+            entry.id === entryId && entry.tipo === "ingrediente"
+              ? { ...entry, item }
+              : entry,
+          ),
+        }));
+      },
+      updateJournalRecipeEntry: (entryId, recipe) => {
+        setData((current) => ({
+          ...current,
+          journalEntries: current.journalEntries.map((entry) =>
+            entry.id === entryId && entry.tipo === "receta"
+              ? { ...entry, recipe }
+              : entry,
+          ),
+        }));
+      },
+      deleteJournalEntry: (entryId) => {
+        setData((current) => ({
+          ...current,
+          journalEntries: current.journalEntries.filter((entry) => entry.id !== entryId),
+        }));
+      },
+      createEmptyRecipeIngredient,
     }),
     [data],
   );

@@ -39,11 +39,29 @@ export interface Recipe {
   ingredientes: RecipeIngredient[];
 }
 
+export interface JournalIngredientEntry {
+  id: string;
+  tipo: "ingrediente";
+  fecha: string;
+  item: RecipeIngredient;
+}
+
+export interface JournalRecipeEntry {
+  id: string;
+  tipo: "receta";
+  fecha: string;
+  recipeId: string | null;
+  recipe: Recipe;
+}
+
+export type JournalEntry = JournalIngredientEntry | JournalRecipeEntry;
+
 export interface AppData {
   categories: CategoryNode[];
   ingredients: IngredientNode[];
   variants: IngredientVariant[];
   recipes: Recipe[];
+  journalEntries: JournalEntry[];
 }
 
 export interface IngredientFormValues {

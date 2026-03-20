@@ -4,6 +4,7 @@ import { NavLink, useLocation } from "react-router-dom";
 const links = [
   { to: "/ingredientes", label: "Ingredientes" },
   { to: "/recetas", label: "Recetas" },
+  { to: "/diario-calorias", label: "Diario de calorías" },
 ];
 
 export const Navbar = () => {

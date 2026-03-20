@@ -3,8 +3,6 @@ import { createId } from "./id";
 
 const lacteosId = createId();
 const lecheId = createId();
-const lecheDescremadaId = createId();
-const lecheAlmendrasId = createId();
 const avenaId = createId();
 const cerealId = createId();
 const instantaneaId = createId();
@@ -116,4 +114,5 @@ export const INITIAL_DATA: AppData = {
     },
   ],
   recipes: [],
+  journalEntries: [],
 };
