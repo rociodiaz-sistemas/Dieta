@@ -6,7 +6,6 @@ import {
   IngredientFormValues,
   IngredientNode,
   IngredientVariant,
-  JournalEntry,
   Recipe,
   RecipeIngredient,
   VariantFormValues,
@@ -34,6 +33,7 @@ interface AppContextValue extends AppData {
   updateJournalIngredientEntry: (entryId: string, item: RecipeIngredient) => void;
   updateJournalRecipeEntry: (entryId: string, recipe: Recipe) => void;
   deleteJournalEntry: (entryId: string) => void;
+  setDailyCalorieGoal: (goal: number) => void;
   createEmptyRecipeIngredient: () => RecipeIngredient;
 }
 
@@ -112,26 +112,26 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                   : recipeIngredient,
               ),
             })),
-            journalEntries: current.journalEntries
-              .map((entry) => {
-                if (entry.tipo === "ingrediente") {
-                  return removedIngredientIds.includes(entry.item.ingredientId ?? "")
-                    ? { ...entry, item: { ...entry.item, ingredientId: null, variantId: null, path: [] } }
-                    : entry;
-                }
+            journalEntries: current.journalEntries.map((entry) => {
+              if (entry.tipo === "ingrediente") {
+                return removedIngredientIds.includes(entry.item.ingredientId ?? "")
+                  ? { ...entry, item: { ...entry.item, ingredientId: null, variantId: null, path: [] } }
+                  : entry;
+              }
 
-                return {
-                  ...entry,
-                  recipe: {
-                    ...entry.recipe,
-                    ingredientes: entry.recipe.ingredientes.map((recipeIngredient) =>
-                      removedIngredientIds.includes(recipeIngredient.ingredientId ?? "")
-                        ? { ...recipeIngredient, ingredientId: null, variantId: null, path: [] }
-                        : recipeIngredient,
-                    ),
-                  },
-                };
-              }),
+              return {
+                ...entry,
+                recipe: {
+                  ...entry.recipe,
+                  ingredientes: entry.recipe.ingredientes.map((recipeIngredient) =>
+                    removedIngredientIds.includes(recipeIngredient.ingredientId ?? "")
+                      ? { ...recipeIngredient, ingredientId: null, variantId: null, path: [] }
+                      : recipeIngredient,
+                  ),
+                },
+              };
+            }),
+            dailyCalorieGoal: current.dailyCalorieGoal,
           };
         });
       },
@@ -346,9 +346,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setData((current) => ({
           ...current,
           journalEntries: current.journalEntries.map((entry) =>
-            entry.id === entryId && entry.tipo === "ingrediente"
-              ? { ...entry, item }
-              : entry,
+            entry.id === entryId && entry.tipo === "ingrediente" ? { ...entry, item } : entry,
           ),
         }));
       },
@@ -356,9 +354,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setData((current) => ({
           ...current,
           journalEntries: current.journalEntries.map((entry) =>
-            entry.id === entryId && entry.tipo === "receta"
-              ? { ...entry, recipe }
-              : entry,
+            entry.id === entryId && entry.tipo === "receta" ? { ...entry, recipe } : entry,
           ),
         }));
       },
@@ -366,6 +362,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setData((current) => ({
           ...current,
           journalEntries: current.journalEntries.filter((entry) => entry.id !== entryId),
+        }));
+      },
+      setDailyCalorieGoal: (goal) => {
+        setData((current) => ({
+          ...current,
+          dailyCalorieGoal: goal,
         }));
       },
       createEmptyRecipeIngredient,

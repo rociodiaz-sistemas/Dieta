@@ -1,4 +1,4 @@
-﻿import { Heading, Stack, Text, useDisclosure } from "@chakra-ui/react";
+﻿import { Box, FormControl, FormLabel, Heading, Input, Stack, Text, useDisclosure } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
 import { CalendarGrid } from "../components/diario/CalendarGrid";
 import { DayDetailModal } from "../components/diario/DayDetailModal";
@@ -16,7 +16,7 @@ export const DiarioCaloriasPage = () => {
   });
   const [selectedDate, setSelectedDate] = useState<string | null>(todayKey);
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { journalEntries, variants } = useAppContext();
+  const { journalEntries, variants, dailyCalorieGoal, setDailyCalorieGoal } = useAppContext();
 
   const dayStats = useMemo(() => {
     return journalEntries.reduce<Record<string, { totalCalories: number; entryCount: number }>>((accumulator, entry) => {
@@ -39,10 +39,24 @@ export const DiarioCaloriasPage = () => {
           </Text>
         </Stack>
 
+        <Box bg="white" borderWidth="1px" rounded="xl" p={5}>
+          <FormControl maxW="280px">
+            <FormLabel>Meta diaria de calorías</FormLabel>
+            <Input
+              type="number"
+              min={0}
+              value={dailyCalorieGoal}
+              onChange={(event) => setDailyCalorieGoal(Number(event.target.value) || 0)}
+              bg="white"
+            />
+          </FormControl>
+        </Box>
+
         <CalendarGrid
           year={visibleMonth.year}
           month={visibleMonth.month}
           todayKey={todayKey}
+          dailyGoal={dailyCalorieGoal}
           dayStats={dayStats}
           onMonthChange={setVisibleMonth}
           onDayClick={(dateKey) => {

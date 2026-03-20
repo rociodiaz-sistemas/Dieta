@@ -127,6 +127,7 @@ const normalizeAppData = (raw: unknown): AppData | null => {
     journalEntries: journalEntries
       .map((entry) => normalizeJournalEntry(entry as Record<string, unknown>))
       .filter((entry): entry is JournalEntry => Boolean(entry)),
+    dailyCalorieGoal: Number(source.dailyCalorieGoal ?? 1600),
   };
 };
 

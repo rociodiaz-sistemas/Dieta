@@ -7,12 +7,13 @@ interface CalendarGridProps {
   year: number;
   month: number;
   todayKey: string;
+  dailyGoal: number;
   dayStats: Record<string, { totalCalories: number; entryCount: number }>;
   onMonthChange: (payload: { year: number; month: number }) => void;
   onDayClick: (dateKey: string) => void;
 }
 
-export const CalendarGrid = ({ year, month, todayKey, dayStats, onMonthChange, onDayClick }: CalendarGridProps) => {
+export const CalendarGrid = ({ year, month, todayKey, dailyGoal, dayStats, onMonthChange, onDayClick }: CalendarGridProps) => {
   const days = buildCalendarDays(year, month);
 
   return (
@@ -53,6 +54,7 @@ export const CalendarGrid = ({ year, month, todayKey, dayStats, onMonthChange, o
           {days.map((day) => {
             const dateKey = formatDateKey(day);
             const stats = dayStats[dateKey] ?? { totalCalories: 0, entryCount: 0 };
+            const status = stats.entryCount === 0 ? "sin-registro" : stats.totalCalories > dailyGoal ? "exceso" : "dentro-meta";
 
             return (
               <CalendarDayCell
@@ -62,6 +64,7 @@ export const CalendarGrid = ({ year, month, todayKey, dayStats, onMonthChange, o
                 entryCount={stats.entryCount}
                 isCurrentMonth={day.getMonth() === month}
                 isToday={dateKey === todayKey}
+                status={status}
                 onClick={() => onDayClick(dateKey)}
               />
             );

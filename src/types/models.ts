@@ -62,6 +62,7 @@ export interface AppData {
   variants: IngredientVariant[];
   recipes: Recipe[];
   journalEntries: JournalEntry[];
+  dailyCalorieGoal: number;
 }
 
 export interface IngredientFormValues {
