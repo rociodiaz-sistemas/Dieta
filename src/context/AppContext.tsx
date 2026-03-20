@@ -2,12 +2,15 @@
 import {
   AppData,
   CategoryNode,
+  IngredientEditValues,
   IngredientFormValues,
   IngredientNode,
+  IngredientVariant,
   Recipe,
   RecipeIngredient,
+  VariantFormValues,
 } from "../types/models";
-import { INITIAL_DATA, UNIT_OPTIONS } from "../utils/constants";
+import { DEFAULT_VARIANT_NAME, INITIAL_DATA, UNIT_OPTIONS } from "../utils/constants";
 import { createId } from "../utils/id";
 import { loadAppData, saveAppData } from "../utils/storage";
 import { collectCategoryAndDescendants } from "../utils/tree";
@@ -18,8 +21,11 @@ interface AppContextValue extends AppData {
   updateCategory: (id: string, nombre: string) => void;
   deleteCategory: (id: string) => void;
   addIngredient: (parentId: string, values: IngredientFormValues) => void;
-  updateIngredient: (id: string, values: IngredientFormValues) => void;
+  updateIngredient: (id: string, values: IngredientEditValues) => void;
   deleteIngredient: (id: string) => void;
+  addVariant: (ingredientId: string, values: VariantFormValues) => void;
+  updateVariant: (id: string, values: VariantFormValues) => void;
+  deleteVariant: (id: string) => void;
   saveRecipe: (recipe: Recipe) => void;
   deleteRecipe: (id: string) => void;
   createEmptyRecipeIngredient: () => RecipeIngredient;
@@ -62,46 +68,50 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       deleteCategory: (id) => {
         setData((current) => {
           const removableCategoryIds = collectCategoryAndDescendants(current.categories, id);
-          const nextCategories = current.categories.filter(
-            (category) => !removableCategoryIds.includes(category.id),
-          );
           const removedIngredientIds = current.ingredients
             .filter((ingredient) => removableCategoryIds.includes(ingredient.parentId))
             .map((ingredient) => ingredient.id);
-          const nextIngredients = current.ingredients.filter(
-            (ingredient) => !removedIngredientIds.includes(ingredient.id),
-          );
-          const nextRecipes = current.recipes.map((recipe) => ({
-            ...recipe,
-            ingredientes: recipe.ingredientes.map((recipeIngredient) =>
-              removedIngredientIds.includes(recipeIngredient.ingredientId ?? "")
-                ? { ...recipeIngredient, ingredientId: null, path: [] }
-                : recipeIngredient,
-            ),
-          }));
+          const removedVariantIds = current.variants
+            .filter((variant) => removedIngredientIds.includes(variant.ingredientId))
+            .map((variant) => variant.id);
 
           return {
-            categories: nextCategories,
-            ingredients: nextIngredients,
-            recipes: nextRecipes,
+            categories: current.categories.filter((category) => !removableCategoryIds.includes(category.id)),
+            ingredients: current.ingredients.filter((ingredient) => !removedIngredientIds.includes(ingredient.id)),
+            variants: current.variants.filter((variant) => !removedVariantIds.includes(variant.id)),
+            recipes: current.recipes.map((recipe) => ({
+              ...recipe,
+              ingredientes: recipe.ingredientes.map((recipeIngredient) =>
+                removedIngredientIds.includes(recipeIngredient.ingredientId ?? "")
+                  ? { ...recipeIngredient, ingredientId: null, variantId: null, path: [] }
+                  : recipeIngredient,
+              ),
+            })),
           };
         });
       },
       addIngredient: (parentId, values) => {
+        const ingredientId = createId();
         const nextIngredient: IngredientNode = {
-          id: createId(),
+          id: ingredientId,
           parentId,
           tipo: "ingrediente",
           nombre: values.nombre.trim(),
+          notas: values.notas.trim() || undefined,
+        };
+        const nextVariant: IngredientVariant = {
+          id: createId(),
+          ingredientId,
+          marca: DEFAULT_VARIANT_NAME,
           calorias: Number(values.calorias),
           unidadBase: values.unidadBase,
           cantidadBase: Number(values.cantidadBase),
-          notas: values.notas.trim() || undefined,
         };
 
         setData((current) => ({
           ...current,
           ingredients: [...current.ingredients, nextIngredient],
+          variants: [...current.variants, nextVariant],
         }));
       },
       updateIngredient: (id, values) => {
@@ -112,9 +122,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
               ? {
                   ...ingredient,
                   nombre: values.nombre.trim(),
-                  calorias: Number(values.calorias),
-                  unidadBase: values.unidadBase,
-                  cantidadBase: Number(values.cantidadBase),
                   notas: values.notas.trim() || undefined,
                 }
               : ingredient,
@@ -122,18 +129,82 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         }));
       },
       deleteIngredient: (id) => {
+        setData((current) => {
+          const removedVariantIds = current.variants
+            .filter((variant) => variant.ingredientId === id)
+            .map((variant) => variant.id);
+
+          return {
+            ...current,
+            ingredients: current.ingredients.filter((ingredient) => ingredient.id !== id),
+            variants: current.variants.filter((variant) => variant.ingredientId !== id),
+            recipes: current.recipes.map((recipe) => ({
+              ...recipe,
+              ingredientes: recipe.ingredientes.map((recipeIngredient) =>
+                recipeIngredient.ingredientId === id || removedVariantIds.includes(recipeIngredient.variantId ?? "")
+                  ? { ...recipeIngredient, ingredientId: null, variantId: null, path: [] }
+                  : recipeIngredient,
+              ),
+            })),
+          };
+        });
+      },
+      addVariant: (ingredientId, values) => {
+        const nextVariant: IngredientVariant = {
+          id: createId(),
+          ingredientId,
+          marca: values.marca.trim(),
+          calorias: Number(values.calorias),
+          unidadBase: values.unidadBase,
+          cantidadBase: Number(values.cantidadBase),
+        };
+
         setData((current) => ({
           ...current,
-          ingredients: current.ingredients.filter((ingredient) => ingredient.id !== id),
-          recipes: current.recipes.map((recipe) => ({
-            ...recipe,
-            ingredientes: recipe.ingredientes.map((recipeIngredient) =>
-              recipeIngredient.ingredientId === id
-                ? { ...recipeIngredient, ingredientId: null, path: [] }
-                : recipeIngredient,
-            ),
-          })),
+          variants: [...current.variants, nextVariant],
         }));
+      },
+      updateVariant: (id, values) => {
+        setData((current) => ({
+          ...current,
+          variants: current.variants.map((variant) =>
+            variant.id === id
+              ? {
+                  ...variant,
+                  marca: values.marca.trim(),
+                  calorias: Number(values.calorias),
+                  unidadBase: values.unidadBase,
+                  cantidadBase: Number(values.cantidadBase),
+                }
+              : variant,
+          ),
+        }));
+      },
+      deleteVariant: (id) => {
+        setData((current) => {
+          const target = current.variants.find((variant) => variant.id === id);
+          if (!target) {
+            return current;
+          }
+
+          const variantsForIngredient = current.variants.filter((variant) => variant.ingredientId === target.ingredientId);
+          if (variantsForIngredient.length <= 1) {
+            return current;
+          }
+
+          return {
+            ...current,
+            variants: current.variants.filter((variant) => variant.id !== id),
+            recipes: current.recipes.map((recipe) => ({
+              ...recipe,
+              ingredientes: recipe.ingredientes.map((recipeIngredient) =>
+                recipeIngredient.variantId === id
+                  ? { ...recipeIngredient, variantId: null }
+                  : recipeIngredient,
+              ),
+            })),
+          };
+        });
       },
       saveRecipe: (recipe) => {
         setData((current) => {
@@ -155,6 +226,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       createEmptyRecipeIngredient: () => ({
         id: createId(),
         ingredientId: null,
+        variantId: null,
         path: [],
         cantidad: "",
         unidad: "g",

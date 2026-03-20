@@ -21,7 +21,7 @@ interface RecipeFormProps {
 }
 
 export const RecipeForm = ({ initialRecipe, onClose }: RecipeFormProps) => {
-  const { ingredients, createEmptyRecipeIngredient, saveRecipe } = useAppContext();
+  const { variants, createEmptyRecipeIngredient, saveRecipe } = useAppContext();
   const [nombre, setNombre] = useState(initialRecipe?.nombre ?? "");
   const [items, setItems] = useState(
     initialRecipe?.ingredientes.length ? initialRecipe.ingredientes : [createEmptyRecipeIngredient()],
@@ -31,20 +31,20 @@ export const RecipeForm = ({ initialRecipe, onClose }: RecipeFormProps) => {
   const totalCalories = useMemo(
     () =>
       items.reduce((accumulator, item) => {
-        const ingredient = ingredients.find((candidate) => candidate.id === item.ingredientId);
-        if (!ingredient || item.cantidad === "") {
+        const variant = variants.find((candidate) => candidate.id === item.variantId);
+        if (!variant || item.cantidad === "") {
           return accumulator;
         }
 
-        const convertedAmount = convertToBaseUnit(Number(item.cantidad), item.unidad, ingredient.unidadBase);
+        const convertedAmount = convertToBaseUnit(Number(item.cantidad), item.unidad, variant.unidadBase);
 
         if (convertedAmount === null) {
           return accumulator;
         }
 
-        return accumulator + (ingredient.calorias * convertedAmount) / ingredient.cantidadBase;
+        return accumulator + (variant.calorias * convertedAmount) / variant.cantidadBase;
       }, 0),
-    [ingredients, items],
+    [items, variants],
   );
 
   const isValid =
@@ -53,6 +53,7 @@ export const RecipeForm = ({ initialRecipe, onClose }: RecipeFormProps) => {
     items.every(
       (item) =>
         item.ingredientId &&
+        item.variantId &&
         item.path.length > 0 &&
         item.cantidad !== "" &&
         Number(item.cantidad) > 0 &&
@@ -83,19 +84,14 @@ export const RecipeForm = ({ initialRecipe, onClose }: RecipeFormProps) => {
           ))}
         </VStack>
 
-        <Button
-          alignSelf="flex-start"
-          variant="outline"
-          colorScheme="green"
-          onClick={() => setItems((current) => [...current, createEmptyRecipeIngredient()])}
-        >
+        <Button alignSelf="flex-start" variant="outline" colorScheme="green" onClick={() => setItems((current) => [...current, createEmptyRecipeIngredient()])}>
           Agregar ingrediente
         </Button>
 
         {!isValid && showValidation ? (
           <Alert status="warning" rounded="md">
             <AlertIcon />
-            Completá el nombre, la ruta jerárquica, el ingrediente final, la cantidad y la unidad.
+            Completá el nombre, la ruta jerárquica, el ingrediente base, la variante, la cantidad y la unidad.
           </Alert>
         ) : null}
 

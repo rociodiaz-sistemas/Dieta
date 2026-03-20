@@ -100,11 +100,11 @@ export const IngredientSelector = ({ value, selectedIngredientId, onChange }: In
       {lastSelectedCategory ? (
         <>
           <Text fontSize="sm" color="gray.600">
-            Ingrediente final
+            Ingrediente base
           </Text>
           <Select
             value={selectedIngredientId ?? ""}
-            placeholder="Seleccionar ingrediente"
+            placeholder="Seleccionar ingrediente base"
             onChange={(event) =>
               onChange({
                 path: value,
@@ -122,14 +122,14 @@ export const IngredientSelector = ({ value, selectedIngredientId, onChange }: In
           {ingredientOptions.length === 0 ? (
             <Alert status="warning" rounded="md">
               <AlertIcon />
-              No hay ingredientes finales dentro de esta rama.
+              No hay ingredientes base dentro de esta rama.
             </Alert>
           ) : null}
         </>
       ) : (
         <Alert status="info" rounded="md">
           <AlertIcon />
-          Elegí una ruta completa para llegar al ingrediente final.
+          Elegí una ruta completa para llegar al ingrediente base.
         </Alert>
       )}
     </VStack>

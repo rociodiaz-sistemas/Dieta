@@ -4,6 +4,7 @@
   Box,
   Button,
   Input,
+  Select,
   SimpleGrid,
   Text,
   VStack,
@@ -22,42 +23,69 @@ interface RecipeIngredientRowProps {
 }
 
 export const RecipeIngredientRow = ({ item, onChange, onDelete }: RecipeIngredientRowProps) => {
-  const { ingredients, unitOptions } = useAppContext();
+  const { ingredients, variants, unitOptions } = useAppContext();
   const ingredient = ingredients.find((candidate) => candidate.id === item.ingredientId);
+  const variantOptions = useMemo(
+    () => variants.filter((variant) => variant.ingredientId === item.ingredientId),
+    [item.ingredientId, variants],
+  );
+  const variant = variantOptions.find((candidate) => candidate.id === item.variantId);
 
   const calculation = useMemo(() => {
-    if (!ingredient || item.cantidad === "" || Number(item.cantidad) <= 0) {
+    if (!variant || item.cantidad === "" || Number(item.cantidad) <= 0) {
       return { total: null as number | null, warning: "" };
     }
 
-    const convertedAmount = convertToBaseUnit(Number(item.cantidad), item.unidad, ingredient.unidadBase);
+    const convertedAmount = convertToBaseUnit(Number(item.cantidad), item.unidad, variant.unidadBase);
 
     if (convertedAmount === null) {
       return {
         total: null,
-        warning: `No se puede convertir ${item.unidad} a ${ingredient.unidadBase}.`,
+        warning: `No se puede convertir ${item.unidad} a ${variant.unidadBase}.`,
       };
     }
 
-    const total = (ingredient.calorias * convertedAmount) / ingredient.cantidadBase;
+    const total = (variant.calorias * convertedAmount) / variant.cantidadBase;
     return { total, warning: "" };
-  }, [ingredient, item.cantidad, item.unidad]);
+  }, [item.cantidad, item.unidad, variant]);
 
   return (
     <Box borderWidth="1px" borderColor="gray.200" rounded="xl" p={4} bg="white">
       <VStack align="stretch" spacing={4}>
         <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={4}>
-          <IngredientSelector
-            value={item.path}
-            selectedIngredientId={item.ingredientId}
-            onChange={({ path, ingredientId }) =>
-              onChange({
-                ...item,
-                path,
-                ingredientId,
-              })
-            }
-          />
+          <VStack align="stretch" spacing={3}>
+            <IngredientSelector
+              value={item.path}
+              selectedIngredientId={item.ingredientId}
+              onChange={({ path, ingredientId }) =>
+                onChange({
+                  ...item,
+                  path,
+                  ingredientId,
+                  variantId: null,
+                })
+              }
+            />
+            <Select
+              value={item.variantId ?? ""}
+              placeholder="Seleccionar marca o variante"
+              onChange={(event) =>
+                onChange({
+                  ...item,
+                  variantId: event.target.value || null,
+                })
+              }
+              bg="white"
+              isDisabled={!item.ingredientId}
+            >
+              {variantOptions.map((variantOption) => (
+                <option key={variantOption.id} value={variantOption.id}>
+                  {variantOption.marca}
+                </option>
+              ))}
+            </Select>
+          </VStack>
+
           <VStack align="stretch" spacing={3}>
             <Input
               type="number"
@@ -79,10 +107,13 @@ export const RecipeIngredientRow = ({ item, onChange, onDelete }: RecipeIngredie
           </VStack>
         </SimpleGrid>
 
-        {ingredient ? (
+        {ingredient && variant ? (
           <Box bg="gray.50" p={3} rounded="md">
             <Text fontSize="sm" color="gray.700">
-              Base nutricional: {ingredient.calorias} calorías por {ingredient.cantidadBase} {ingredient.unidadBase}
+              Variante seleccionada: {ingredient.nombre} - {variant.marca}
+            </Text>
+            <Text fontSize="sm" color="gray.700" mt={1}>
+              Base nutricional: {variant.calorias} calorías por {variant.cantidadBase} {variant.unidadBase}
             </Text>
             {calculation.warning ? (
               <Alert status="warning" mt={3} rounded="md">
@@ -95,10 +126,15 @@ export const RecipeIngredientRow = ({ item, onChange, onDelete }: RecipeIngredie
               </Text>
             )}
           </Box>
+        ) : ingredient ? (
+          <Alert status="info" rounded="md">
+            <AlertIcon />
+            Seleccioná una variante o marca para calcular calorías.
+          </Alert>
         ) : (
           <Alert status="info" rounded="md">
             <AlertIcon />
-            Seleccioná un ingrediente final para calcular calorías.
+            Seleccioná un ingrediente base para continuar.
           </Alert>
         )}
       </VStack>

@@ -5,12 +5,15 @@ const lacteosId = createId();
 const lecheId = createId();
 const lecheDescremadaId = createId();
 const lecheAlmendrasId = createId();
-const ilolayId = createId();
-const serenisimaId = createId();
 const avenaId = createId();
 const cerealId = createId();
 const instantaneaId = createId();
-const avenaQuakerId = createId();
+
+const lecheDescremadaIngredientId = createId();
+const lecheAlmendrasIngredientId = createId();
+const avenaInstantaneaIngredientId = createId();
+
+export const DEFAULT_VARIANT_NAME = "N/A";
 
 export const UNIT_OPTIONS = [
   "g",
@@ -27,57 +30,89 @@ export const INITIAL_DATA: AppData = {
   categories: [
     { id: lacteosId, nombre: "Lácteos", parentId: null, tipo: "categoria" },
     { id: lecheId, nombre: "Leche", parentId: lacteosId, tipo: "categoria" },
-    {
-      id: lecheDescremadaId,
-      nombre: "Leche descremada",
-      parentId: lecheId,
-      tipo: "categoria",
-    },
-    {
-      id: lecheAlmendrasId,
-      nombre: "Leche de almendras",
-      parentId: lecheId,
-      tipo: "categoria",
-    },
     { id: avenaId, nombre: "Avena", parentId: null, tipo: "categoria" },
     { id: cerealId, nombre: "Cereal", parentId: avenaId, tipo: "categoria" },
-    {
-      id: instantaneaId,
-      nombre: "Instantánea",
-      parentId: cerealId,
-      tipo: "categoria",
-    },
+    { id: instantaneaId, nombre: "Instantánea", parentId: cerealId, tipo: "categoria" },
   ],
   ingredients: [
     {
-      id: ilolayId,
-      nombre: "Leche descremada Ilolay",
-      parentId: lecheDescremadaId,
+      id: lecheDescremadaIngredientId,
+      nombre: "Leche descremada",
+      parentId: lecheId,
       tipo: "ingrediente",
+      notas: "Base para desayunos, café y preparaciones livianas.",
+    },
+    {
+      id: lecheAlmendrasIngredientId,
+      nombre: "Leche de almendras",
+      parentId: lecheId,
+      tipo: "ingrediente",
+      notas: "Alternativa vegetal para licuados y café.",
+    },
+    {
+      id: avenaInstantaneaIngredientId,
+      nombre: "Avena instantánea",
+      parentId: instantaneaId,
+      tipo: "ingrediente",
+      notas: "Aporta fibra y saciedad.",
+    },
+  ],
+  variants: [
+    {
+      id: createId(),
+      ingredientId: lecheDescremadaIngredientId,
+      marca: "N/A",
+      calorias: 36,
+      unidadBase: "ml",
+      cantidadBase: 100,
+    },
+    {
+      id: createId(),
+      ingredientId: lecheDescremadaIngredientId,
+      marca: "Serenísima",
       calorias: 35,
       unidadBase: "ml",
       cantidadBase: 100,
-      notas: "Ideal para desayunos y café.",
     },
     {
-      id: serenisimaId,
-      nombre: "Leche de almendras Serenísima",
-      parentId: lecheAlmendrasId,
-      tipo: "ingrediente",
+      id: createId(),
+      ingredientId: lecheDescremadaIngredientId,
+      marca: "Ilolay",
+      calorias: 38,
+      unidadBase: "ml",
+      cantidadBase: 100,
+    },
+    {
+      id: createId(),
+      ingredientId: lecheAlmendrasIngredientId,
+      marca: "N/A",
+      calorias: 20,
+      unidadBase: "ml",
+      cantidadBase: 100,
+    },
+    {
+      id: createId(),
+      ingredientId: lecheAlmendrasIngredientId,
+      marca: "Serenísima",
       calorias: 18,
       unidadBase: "ml",
       cantidadBase: 100,
-      notas: "Sin azúcar agregada.",
     },
     {
-      id: avenaQuakerId,
-      nombre: "Avena instantánea Quaker",
-      parentId: instantaneaId,
-      tipo: "ingrediente",
+      id: createId(),
+      ingredientId: avenaInstantaneaIngredientId,
+      marca: "N/A",
       calorias: 389,
       unidadBase: "g",
       cantidadBase: 100,
-      notas: "Aporta fibra y saciedad.",
+    },
+    {
+      id: createId(),
+      ingredientId: avenaInstantaneaIngredientId,
+      marca: "Quaker",
+      calorias: 389,
+      unidadBase: "g",
+      cantidadBase: 100,
     },
   ],
   recipes: [],

@@ -9,29 +9,29 @@ interface RecipeListProps {
 }
 
 export const RecipeList = ({ onEdit }: RecipeListProps) => {
-  const { recipes, ingredients, deleteRecipe } = useAppContext();
+  const { recipes, ingredients, variants, deleteRecipe } = useAppContext();
 
   const totals = useMemo(() => {
     return recipes.reduce<Record<string, number>>((accumulator, recipe) => {
       const total = recipe.ingredientes.reduce((sum, recipeIngredient) => {
-        const ingredient = ingredients.find((candidate) => candidate.id === recipeIngredient.ingredientId);
-        if (!ingredient || recipeIngredient.cantidad === "") {
+        const variant = variants.find((candidate) => candidate.id === recipeIngredient.variantId);
+        if (!variant || recipeIngredient.cantidad === "") {
           return sum;
         }
 
-        const convertedAmount = convertToBaseUnit(Number(recipeIngredient.cantidad), recipeIngredient.unidad, ingredient.unidadBase);
+        const convertedAmount = convertToBaseUnit(Number(recipeIngredient.cantidad), recipeIngredient.unidad, variant.unidadBase);
 
         if (convertedAmount === null) {
           return sum;
         }
 
-        return sum + (ingredient.calorias * convertedAmount) / ingredient.cantidadBase;
+        return sum + (variant.calorias * convertedAmount) / variant.cantidadBase;
       }, 0);
 
       accumulator[recipe.id] = total;
       return accumulator;
     }, {});
-  }, [ingredients, recipes]);
+  }, [recipes, variants]);
 
   if (recipes.length === 0) {
     return (
@@ -51,13 +51,15 @@ export const RecipeList = ({ onEdit }: RecipeListProps) => {
           <Stack spacing={2} mb={4}>
             {recipe.ingredientes.map((item) => {
               const ingredient = ingredients.find((candidate) => candidate.id === item.ingredientId);
+              const variant = variants.find((candidate) => candidate.id === item.variantId);
               const routeText = item.path.join(" → ");
 
               return (
                 <Text key={item.id} fontSize="sm" color="gray.700">
                   {routeText}
                   {routeText ? " → " : ""}
-                  {ingredient?.nombre ?? "Ingrediente eliminado"} | {item.cantidad || 0} {item.unidad}
+                  {ingredient?.nombre ?? "Ingrediente eliminado"}
+                  {variant ? ` (${variant.marca})` : ""} | {item.cantidad || 0} {item.unidad}
                 </Text>
               );
             })}

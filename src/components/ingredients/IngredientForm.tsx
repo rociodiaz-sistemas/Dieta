@@ -6,6 +6,7 @@
   Input,
   Select,
   SimpleGrid,
+  Text,
   Textarea,
   VStack,
 } from "@chakra-ui/react";
@@ -21,10 +22,10 @@ interface IngredientFormProps {
 
 const EMPTY_VALUES: IngredientFormValues = {
   nombre: "",
+  notas: "",
   calorias: "",
   unidadBase: "g",
   cantidadBase: 100,
-  notas: "",
 };
 
 export const IngredientForm = ({ unitOptions, initialValues, submitLabel, onSubmit }: IngredientFormProps) => {
@@ -33,7 +34,7 @@ export const IngredientForm = ({ unitOptions, initialValues, submitLabel, onSubm
   const isValid = useMemo(
     () =>
       values.nombre.trim().length > 0 &&
-      Number(values.calorias) > 0 &&
+      Number(values.calorias) >= 0 &&
       Number(values.cantidadBase) > 0 &&
       values.unidadBase.length > 0,
     [values],
@@ -42,60 +43,13 @@ export const IngredientForm = ({ unitOptions, initialValues, submitLabel, onSubm
   return (
     <VStack spacing={4} align="stretch">
       <FormControl isRequired>
-        <FormLabel>Nombre</FormLabel>
+        <FormLabel>Nombre del ingrediente base</FormLabel>
         <Input
           value={values.nombre}
           onChange={(event) => setValues((current) => ({ ...current, nombre: event.target.value }))}
           bg="white"
         />
       </FormControl>
-
-      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
-        <FormControl isRequired>
-          <FormLabel>Calorías</FormLabel>
-          <Input
-            type="number"
-            min={0}
-            value={values.calorias}
-            onChange={(event) =>
-              setValues((current) => ({
-                ...current,
-                calorias: event.target.value === "" ? "" : Number(event.target.value),
-              }))
-            }
-            bg="white"
-          />
-        </FormControl>
-        <FormControl isRequired>
-          <FormLabel>Unidad base</FormLabel>
-          <Select
-            value={values.unidadBase}
-            onChange={(event) => setValues((current) => ({ ...current, unidadBase: event.target.value }))}
-            bg="white"
-          >
-            {unitOptions.map((unit) => (
-              <option key={unit} value={unit}>
-                {unit}
-              </option>
-            ))}
-          </Select>
-        </FormControl>
-        <FormControl isRequired>
-          <FormLabel>Cantidad base</FormLabel>
-          <Input
-            type="number"
-            min={0}
-            value={values.cantidadBase}
-            onChange={(event) =>
-              setValues((current) => ({
-                ...current,
-                cantidadBase: event.target.value === "" ? "" : Number(event.target.value),
-              }))
-            }
-            bg="white"
-          />
-        </FormControl>
-      </SimpleGrid>
 
       <FormControl>
         <FormLabel>Notas</FormLabel>
@@ -106,6 +60,58 @@ export const IngredientForm = ({ unitOptions, initialValues, submitLabel, onSubm
           resize="vertical"
         />
       </FormControl>
+
+      <Box rounded="lg" borderWidth="1px" borderColor="green.100" bg="green.50" p={4}>
+        <Text fontWeight="semibold" color="green.800" mb={3}>
+          Variante inicial: N/A
+        </Text>
+        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+          <FormControl isRequired>
+            <FormLabel>Calorías</FormLabel>
+            <Input
+              type="number"
+              min={0}
+              value={values.calorias}
+              onChange={(event) =>
+                setValues((current) => ({
+                  ...current,
+                  calorias: event.target.value === "" ? "" : Number(event.target.value),
+                }))
+              }
+              bg="white"
+            />
+          </FormControl>
+          <FormControl isRequired>
+            <FormLabel>Unidad base</FormLabel>
+            <Select
+              value={values.unidadBase}
+              onChange={(event) => setValues((current) => ({ ...current, unidadBase: event.target.value }))}
+              bg="white"
+            >
+              {unitOptions.map((unit) => (
+                <option key={unit} value={unit}>
+                  {unit}
+                </option>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl isRequired>
+            <FormLabel>Cantidad base</FormLabel>
+            <Input
+              type="number"
+              min={0}
+              value={values.cantidadBase}
+              onChange={(event) =>
+                setValues((current) => ({
+                  ...current,
+                  cantidadBase: event.target.value === "" ? "" : Number(event.target.value),
+                }))
+              }
+              bg="white"
+            />
+          </FormControl>
+        </SimpleGrid>
+      </Box>
 
       <Box>
         <Button colorScheme="green" onClick={() => onSubmit(values)} isDisabled={!isValid}>
