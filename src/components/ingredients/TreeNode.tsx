@@ -6,10 +6,17 @@
   Icon,
   IconButton,
   Input,
+  Spacer,
   Text,
+  Tooltip,
   VStack,
 } from "@chakra-ui/react";
-import { ChevronDownIcon, ChevronRightIcon } from "@chakra-ui/icons";
+import {
+  ChevronDownIcon,
+  ChevronRightIcon,
+  DeleteIcon,
+  EditIcon,
+} from "@chakra-ui/icons";
 import { useMemo, useState } from "react";
 import { useAppContext } from "../../context/AppContext";
 import { CategoryNode } from "../../types/models";
@@ -22,10 +29,17 @@ interface TreeNodeProps {
   category: CategoryNode;
   depth?: number;
   selectedItem: { id: string; tipo: "categoria" | "ingrediente" } | null;
-  onSelect: (item: { id: string; tipo: "categoria" | "ingrediente" } | null) => void;
+  onSelect: (
+    item: { id: string; tipo: "categoria" | "ingrediente" } | null,
+  ) => void;
 }
 
-export const TreeNode = ({ category, depth = 0, selectedItem, onSelect }: TreeNodeProps) => {
+export const TreeNode = ({
+  category,
+  depth = 0,
+  selectedItem,
+  onSelect,
+}: TreeNodeProps) => {
   const {
     categories,
     ingredients,
@@ -46,7 +60,8 @@ export const TreeNode = ({ category, depth = 0, selectedItem, onSelect }: TreeNo
   const childCategories = getChildCategories(categories, category.id);
   const childIngredients = getChildIngredients(ingredients, category.id);
   const hasChildren = childCategories.length > 0 || childIngredients.length > 0;
-  const isSelected = selectedItem?.tipo === "categoria" && selectedItem.id === category.id;
+  const isSelected =
+    selectedItem?.tipo === "categoria" && selectedItem.id === category.id;
   const indentation = useMemo(() => depth * 14, [depth]);
 
   const rowStyles = {
@@ -80,10 +95,15 @@ export const TreeNode = ({ category, depth = 0, selectedItem, onSelect }: TreeNo
           }}
         >
           <IconButton
-            aria-label={isExpanded ? "Contraer categoría" : "Expandir categoría"}
+            aria-label={
+              isExpanded ? "Contraer categoría" : "Expandir categoría"
+            }
             icon={
               hasChildren ? (
-                <Icon as={isExpanded ? ChevronDownIcon : ChevronRightIcon} boxSize={5} />
+                <Icon
+                  as={isExpanded ? ChevronDownIcon : ChevronRightIcon}
+                  boxSize={5}
+                />
               ) : (
                 <Box w={5} />
               )
@@ -98,11 +118,24 @@ export const TreeNode = ({ category, depth = 0, selectedItem, onSelect }: TreeNo
             }}
           />
 
-          <Box w="12px" h="10px" rounded="sm" bg={hasChildren ? "yellow.400" : "yellow.300"} borderWidth="1px" borderColor="yellow.600" flexShrink={0} />
+          <Box
+            w="12px"
+            h="10px"
+            rounded="sm"
+            bg={hasChildren ? "yellow.400" : "yellow.300"}
+            borderWidth="1px"
+            borderColor="yellow.600"
+            flexShrink={0}
+          />
 
           {isEditingName ? (
             <HStack flex="1" onClick={(event) => event.stopPropagation()}>
-              <Input size="sm" value={draftName} onChange={(event) => setDraftName(event.target.value)} bg="white" />
+              <Input
+                size="sm"
+                value={draftName}
+                onChange={(event) => setDraftName(event.target.value)}
+                bg="white"
+              />
               <Button
                 size="sm"
                 colorScheme="green"
@@ -118,27 +151,55 @@ export const TreeNode = ({ category, depth = 0, selectedItem, onSelect }: TreeNo
               </Button>
             </HStack>
           ) : (
-            <Text flex="1" fontWeight={isSelected ? "semibold" : "medium"} color="gray.800">
-              {category.nombre}
-            </Text>
+            <>
+              <Text
+                fontWeight={isSelected ? "semibold" : "medium"}
+                color="gray.800"
+              >
+                {category.nombre}
+              </Text>
+              <HStack spacing={1} onClick={(event) => event.stopPropagation()}>
+                <Tooltip label="Editar" hasArrow>
+                  <IconButton
+                    aria-label="Editar"
+                    icon={<EditIcon boxSize={3.5} />}
+                    size="xs"
+                    variant="ghost"
+                    colorScheme="gray"
+                    onClick={() => setIsEditingName(true)}
+                  />
+                </Tooltip>
+                <Tooltip label="Eliminar" hasArrow>
+                  <IconButton
+                    aria-label="Eliminar"
+                    icon={<DeleteIcon boxSize={3.5} />}
+                    size="xs"
+                    variant="ghost"
+                    onClick={() => deleteCategory(category.id)}
+                  />
+                </Tooltip>
+              </HStack>
+              <Spacer />
+              <HStack spacing={2} onClick={(event) => event.stopPropagation()}>
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  colorScheme="green"
+                  onClick={() => setShowCategoryForm((current) => !current)}
+                >
+                  Agregar subcategoría
+                </Button>
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  colorScheme="green"
+                  onClick={() => setShowIngredientForm((current) => !current)}
+                >
+                  Agregar ingrediente
+                </Button>
+              </HStack>
+            </>
           )}
-
-          <HStack spacing={2} onClick={(event) => event.stopPropagation()}>
-            {!isEditingName ? (
-              <Button size="xs" variant="ghost" onClick={() => setIsEditingName(true)}>
-                Editar
-              </Button>
-            ) : null}
-            <Button size="xs" variant="ghost" colorScheme="green" onClick={() => setShowCategoryForm((current) => !current)}>
-              Agregar subcategoría
-            </Button>
-            <Button size="xs" variant="ghost" colorScheme="green" onClick={() => setShowIngredientForm((current) => !current)}>
-              Agregar ingrediente
-            </Button>
-            <Button size="xs" variant="ghost" colorScheme="red" onClick={() => deleteCategory(category.id)}>
-              Eliminar
-            </Button>
-          </HStack>
         </HStack>
       </Box>
 
@@ -157,7 +218,16 @@ export const TreeNode = ({ category, depth = 0, selectedItem, onSelect }: TreeNo
       </Collapse>
 
       <Collapse in={showIngredientForm} animateOpacity>
-        <Box ml={`${indentation + 52}px`} mt={2} mb={2} borderWidth="1px" borderColor="gray.200" rounded="lg" p={4} bg="gray.50">
+        <Box
+          ml={`${indentation + 52}px`}
+          mt={2}
+          mb={2}
+          borderWidth="1px"
+          borderColor="gray.200"
+          rounded="lg"
+          p={4}
+          bg="gray.50"
+        >
           <IngredientForm
             unitOptions={unitOptions}
             submitLabel="Guardar ingrediente"
@@ -171,12 +241,23 @@ export const TreeNode = ({ category, depth = 0, selectedItem, onSelect }: TreeNo
       </Collapse>
 
       <Collapse in={isExpanded} animateOpacity>
-        <Box ml={`${indentation + 14}px`} pl={2} borderLeftWidth={depth >= 0 ? "1px" : "0"} borderColor="gray.200">
+        <Box
+          ml={`${indentation + 14}px`}
+          pl={2}
+          borderLeftWidth={depth >= 0 ? "1px" : "0"}
+          borderColor="gray.200"
+        >
           <VStack align="stretch" spacing={1} py={1}>
             {hasChildren ? (
               <>
                 {childCategories.map((childCategory) => (
-                  <TreeNode key={childCategory.id} category={childCategory} depth={depth + 1} selectedItem={selectedItem} onSelect={onSelect} />
+                  <TreeNode
+                    key={childCategory.id}
+                    category={childCategory}
+                    depth={depth + 1}
+                    selectedItem={selectedItem}
+                    onSelect={onSelect}
+                  />
                 ))}
 
                 {childIngredients.map((ingredient) => (
@@ -184,8 +265,13 @@ export const TreeNode = ({ category, depth = 0, selectedItem, onSelect }: TreeNo
                     key={ingredient.id}
                     ingredient={ingredient}
                     depth={depth + 1}
-                    isSelected={selectedItem?.tipo === "ingrediente" && selectedItem.id === ingredient.id}
-                    onSelect={() => onSelect({ id: ingredient.id, tipo: "ingrediente" })}
+                    isSelected={
+                      selectedItem?.tipo === "ingrediente" &&
+                      selectedItem.id === ingredient.id
+                    }
+                    onSelect={() =>
+                      onSelect({ id: ingredient.id, tipo: "ingrediente" })
+                    }
                     onSave={(values) => updateIngredient(ingredient.id, values)}
                     onDelete={() => deleteIngredient(ingredient.id)}
                   />
