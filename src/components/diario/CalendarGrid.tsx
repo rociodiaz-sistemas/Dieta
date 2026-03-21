@@ -1,19 +1,43 @@
-﻿import { Box, Grid, GridItem, HStack, IconButton, Text, VStack } from "@chakra-ui/react";
+import { Box, Grid, GridItem, HStack, IconButton, Text, VStack } from "@chakra-ui/react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 import { CalendarDayCell } from "./CalendarDayCell";
+import { MonthlyCalorieTarget } from "../../types/models";
+import { DEFAULT_MONTHLY_CALORIE_TARGET } from "../../utils/constants";
 import { WEEKDAY_NAMES, buildCalendarDays, formatDateKey, formatMonthKey, getMonthLabel } from "../../utils/date";
 
 interface CalendarGridProps {
   year: number;
   month: number;
   todayKey: string;
-  monthlyGoals: Record<string, number>;
+  monthlyTargets: Record<string, MonthlyCalorieTarget>;
   dayStats: Record<string, { totalCalories: number; entryCount: number }>;
   onMonthChange: (payload: { year: number; month: number }) => void;
   onDayClick: (dateKey: string) => void;
 }
 
-export const CalendarGrid = ({ year, month, todayKey, monthlyGoals, dayStats, onMonthChange, onDayClick }: CalendarGridProps) => {
+const getDotColor = (entryCount: number, totalCalories: number, target: MonthlyCalorieTarget) => {
+  if (entryCount === 0) {
+    return "gray.400";
+  }
+
+  if (totalCalories <= target.goal) {
+    return "hsl(120, 70%, 42%)";
+  }
+
+  const effectiveMaintenance = Math.max(target.maintenance, target.goal);
+
+  if (totalCalories >= effectiveMaintenance) {
+    return "hsl(0, 78%, 56%)";
+  }
+
+  const range = Math.max(effectiveMaintenance - target.goal, 1);
+  const progress = (totalCalories - target.goal) / range;
+  const hue = 120 * (1 - progress);
+
+  return `hsl(${hue}, 78%, 48%)`;
+};
+
+export const CalendarGrid = ({ year, month, todayKey, monthlyTargets, dayStats, onMonthChange, onDayClick }: CalendarGridProps) => {
   const days = buildCalendarDays(year, month);
 
   return (
@@ -54,9 +78,8 @@ export const CalendarGrid = ({ year, month, todayKey, monthlyGoals, dayStats, on
           {days.map((day) => {
             const dateKey = formatDateKey(day);
             const monthKey = formatMonthKey(day.getFullYear(), day.getMonth());
-            const monthGoal = monthlyGoals[monthKey] ?? 1600;
+            const monthTarget = monthlyTargets[monthKey] ?? DEFAULT_MONTHLY_CALORIE_TARGET;
             const stats = dayStats[dateKey] ?? { totalCalories: 0, entryCount: 0 };
-            const status = stats.entryCount === 0 ? "sin-registro" : stats.totalCalories > monthGoal ? "exceso" : "dentro-meta";
 
             return (
               <CalendarDayCell
@@ -66,7 +89,7 @@ export const CalendarGrid = ({ year, month, todayKey, monthlyGoals, dayStats, on
                 entryCount={stats.entryCount}
                 isCurrentMonth={day.getMonth() === month}
                 isToday={dateKey === todayKey}
-                status={status}
+                dotColor={getDotColor(stats.entryCount, stats.totalCalories, monthTarget)}
                 onClick={() => onDayClick(dateKey)}
               />
             );

@@ -6,7 +6,7 @@ interface CalendarDayCellProps {
   entryCount: number;
   isCurrentMonth: boolean;
   isToday: boolean;
-  status: "sin-registro" | "dentro-meta" | "exceso";
+  dotColor: string;
   onClick: () => void;
 }
 
@@ -16,17 +16,9 @@ export const CalendarDayCell = ({
   entryCount,
   isCurrentMonth,
   isToday,
-  status,
+  dotColor,
   onClick,
 }: CalendarDayCellProps) => {
-  const hasEntries = entryCount > 0;
-  const dotColor =
-    status === "exceso"
-      ? "red.400"
-      : status === "dentro-meta"
-        ? "green.400"
-        : "gray.400";
-
   return (
     <GridItem>
       <Box
@@ -48,30 +40,13 @@ export const CalendarDayCell = ({
         }}
         onClick={onClick}
       >
-        <Box
-          position="absolute"
-          top={3}
-          right={3}
-          w="10px"
-          h="10px"
-          rounded="full"
-          bg={dotColor}
-        />
+        <Box position="absolute" top={3} right={3} w="10px" h="10px" rounded="full" bg={dotColor} />
         <VStack align="stretch" spacing={2} h="full" justify="space-between">
-          <Text
-            fontWeight={isToday ? "bold" : "semibold"}
-            color={
-              isToday ? "blue.800" : isCurrentMonth ? "gray.800" : "gray.500"
-            }
-          >
+          <Text fontWeight={isToday ? "bold" : "semibold"} color={isToday ? "blue.800" : isCurrentMonth ? "gray.800" : "gray.500"}>
             {dayNumber}
           </Text>
           <VStack align="stretch" spacing={1}>
-            <Text
-              fontSize="sm"
-              color={isToday ? "blue.800" : "brand.700"}
-              fontWeight="semibold"
-            >
+            <Text fontSize="sm" color={isToday ? "blue.800" : "brand.700"} fontWeight="semibold">
               {totalCalories.toFixed(0)} kcal
             </Text>
             <Text fontSize="xs" color={isToday ? "blue.700" : "gray.600"}>

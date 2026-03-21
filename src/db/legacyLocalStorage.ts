@@ -3,10 +3,11 @@
   IngredientNode,
   IngredientVariant,
   JournalEntry,
+  MonthlyCalorieTarget,
   Recipe,
   RecipeIngredient,
 } from "../types/models";
-import { DEFAULT_VARIANT_NAME } from "../utils/constants";
+import { DEFAULT_MONTHLY_CALORIE_TARGET, DEFAULT_VARIANT_NAME } from "../utils/constants";
 import { formatMonthKey } from "../utils/date";
 import { createId } from "../utils/id";
 
@@ -62,6 +63,28 @@ const normalizeJournalEntry = (entry: Record<string, unknown>): JournalEntry | n
   }
 
   return null;
+};
+
+const normalizeTarget = (value: unknown): MonthlyCalorieTarget => {
+  if (typeof value === "number") {
+    return {
+      goal: value,
+      maintenance: value + 300,
+    };
+  }
+
+  if (value && typeof value === "object") {
+    const raw = value as Record<string, unknown>;
+    const goal = Number(raw.goal ?? DEFAULT_MONTHLY_CALORIE_TARGET.goal);
+    const maintenance = Number(raw.maintenance ?? goal + 300);
+
+    return {
+      goal,
+      maintenance: Math.max(maintenance, goal),
+    };
+  }
+
+  return DEFAULT_MONTHLY_CALORIE_TARGET;
 };
 
 const normalizeLegacyAppData = (raw: unknown): AppData | null => {
@@ -128,13 +151,18 @@ const normalizeLegacyAppData = (raw: unknown): AppData | null => {
   });
 
   const currentMonthKey = formatMonthKey(new Date().getFullYear(), new Date().getMonth());
-  const monthlyCalorieGoals =
-    source.monthlyCalorieGoals && typeof source.monthlyCalorieGoals === "object"
-      ? Object.entries(source.monthlyCalorieGoals as Record<string, unknown>).reduce<Record<string, number>>((accumulator, [key, value]) => {
-          accumulator[key] = Number(value ?? 1600);
+  const monthlyCalorieTargets =
+    source.monthlyCalorieTargets && typeof source.monthlyCalorieTargets === "object"
+      ? Object.entries(source.monthlyCalorieTargets as Record<string, unknown>).reduce<Record<string, MonthlyCalorieTarget>>((accumulator, [key, value]) => {
+          accumulator[key] = normalizeTarget(value);
           return accumulator;
         }, {})
-      : { [currentMonthKey]: Number(source.dailyCalorieGoal ?? 1600) };
+      : source.monthlyCalorieGoals && typeof source.monthlyCalorieGoals === "object"
+        ? Object.entries(source.monthlyCalorieGoals as Record<string, unknown>).reduce<Record<string, MonthlyCalorieTarget>>((accumulator, [key, value]) => {
+            accumulator[key] = normalizeTarget(value);
+            return accumulator;
+          }, {})
+        : { [currentMonthKey]: normalizeTarget(Number(source.dailyCalorieGoal ?? DEFAULT_MONTHLY_CALORIE_TARGET.goal)) };
 
   return {
     categories: categories as AppData["categories"],
@@ -144,7 +172,7 @@ const normalizeLegacyAppData = (raw: unknown): AppData | null => {
     journalEntries: journalEntries
       .map((entry) => normalizeJournalEntry(entry as Record<string, unknown>))
       .filter((entry): entry is JournalEntry => Boolean(entry)),
-    monthlyCalorieGoals,
+    monthlyCalorieTargets,
   };
 };
 

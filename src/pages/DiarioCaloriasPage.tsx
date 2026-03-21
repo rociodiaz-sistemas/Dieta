@@ -1,10 +1,11 @@
-﻿import { Box, FormControl, FormHelperText, FormLabel, Heading, Input, Stack, Text, useDisclosure } from "@chakra-ui/react";
+﻿import { Box, FormControl, FormHelperText, FormLabel, Heading, Input, SimpleGrid, Stack, Text, useDisclosure } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
 import { CalendarGrid } from "../components/diario/CalendarGrid";
 import { DayDetailModal } from "../components/diario/DayDetailModal";
 import { PageContainer } from "../components/PageContainer";
 import { useAppContext } from "../context/AppContext";
 import { calculateJournalEntryCalories } from "../utils/calorieCalculations";
+import { DEFAULT_MONTHLY_CALORIE_TARGET } from "../utils/constants";
 import { formatDateKey, formatMonthKey, getMonthName } from "../utils/date";
 
 export const DiarioCaloriasPage = () => {
@@ -16,10 +17,10 @@ export const DiarioCaloriasPage = () => {
   });
   const [selectedDate, setSelectedDate] = useState<string | null>(todayKey);
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { journalEntries, variants, monthlyCalorieGoals, setMonthlyCalorieGoal } = useAppContext();
+  const { journalEntries, variants, monthlyCalorieTargets, setMonthlyCalorieTarget } = useAppContext();
 
   const visibleMonthKey = formatMonthKey(visibleMonth.year, visibleMonth.month);
-  const visibleMonthGoal = monthlyCalorieGoals[visibleMonthKey] ?? 1600;
+  const visibleMonthTarget = monthlyCalorieTargets[visibleMonthKey] ?? DEFAULT_MONTHLY_CALORIE_TARGET;
 
   const dayStats = useMemo(() => {
     return journalEntries.reduce<Record<string, { totalCalories: number; entryCount: number }>>((accumulator, entry) => {
@@ -43,26 +44,52 @@ export const DiarioCaloriasPage = () => {
         </Stack>
 
         <Box bg="white" borderWidth="1px" rounded="xl" p={5}>
-          <FormControl maxW="320px">
-            <FormLabel>Meta diaria del mes (kcal)</FormLabel>
-            <Input
-              type="number"
-              min={0}
-              value={visibleMonthGoal}
-              onChange={(event) => setMonthlyCalorieGoal(visibleMonthKey, Number(event.target.value) || 0)}
-              bg="white"
-            />
-            <FormHelperText>
-              Meta diaria para {getMonthName(visibleMonth.month).toLowerCase()}.
-            </FormHelperText>
-          </FormControl>
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+            <FormControl>
+              <FormLabel>Meta diaria del mes (kcal)</FormLabel>
+              <Input
+                type="number"
+                min={0}
+                value={visibleMonthTarget.goal}
+                onChange={(event) =>
+                  setMonthlyCalorieTarget(visibleMonthKey, {
+                    ...visibleMonthTarget,
+                    goal: Number(event.target.value) || 0,
+                  })
+                }
+                bg="white"
+              />
+              <FormHelperText>
+                Meta diaria para {getMonthName(visibleMonth.month).toLowerCase()}.
+              </FormHelperText>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Mantenimiento diario del mes (kcal)</FormLabel>
+              <Input
+                type="number"
+                min={0}
+                value={visibleMonthTarget.maintenance}
+                onChange={(event) =>
+                  setMonthlyCalorieTarget(visibleMonthKey, {
+                    ...visibleMonthTarget,
+                    maintenance: Number(event.target.value) || 0,
+                  })
+                }
+                bg="white"
+              />
+              <FormHelperText>
+                Se usa solo para el color del punto del calendario.
+              </FormHelperText>
+            </FormControl>
+          </SimpleGrid>
         </Box>
 
         <CalendarGrid
           year={visibleMonth.year}
           month={visibleMonth.month}
           todayKey={todayKey}
-          monthlyGoals={monthlyCalorieGoals}
+          monthlyTargets={monthlyCalorieTargets}
           dayStats={dayStats}
           onMonthChange={setVisibleMonth}
           onDayClick={(dateKey) => {

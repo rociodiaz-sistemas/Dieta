@@ -56,13 +56,18 @@ export interface JournalRecipeEntry {
 
 export type JournalEntry = JournalIngredientEntry | JournalRecipeEntry;
 
+export interface MonthlyCalorieTarget {
+  goal: number;
+  maintenance: number;
+}
+
 export interface AppData {
   categories: CategoryNode[];
   ingredients: IngredientNode[];
   variants: IngredientVariant[];
   recipes: Recipe[];
   journalEntries: JournalEntry[];
-  monthlyCalorieGoals: Record<string, number>;
+  monthlyCalorieTargets: Record<string, MonthlyCalorieTarget>;
 }
 
 export interface IngredientFormValues {

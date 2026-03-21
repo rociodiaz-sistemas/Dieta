@@ -6,6 +6,7 @@ import { RecipeList } from "../components/recipes/RecipeList";
 import { useAppContext } from "../context/AppContext";
 import { Recipe } from "../types/models";
 import { calculateJournalEntryCalories } from "../utils/calorieCalculations";
+import { DEFAULT_MONTHLY_CALORIE_TARGET } from "../utils/constants";
 import { formatDateKey, formatMonthKey } from "../utils/date";
 
 export const RecetasPage = () => {
@@ -16,13 +17,13 @@ export const RecetasPage = () => {
   const [maxCalories, setMaxCalories] = useState<number | "">("");
   const [calorieAwareOnly, setCalorieAwareOnly] = useState(false);
   const toast = useToast();
-  const { journalEntries, variants, monthlyCalorieGoals, addJournalRecipeEntry } = useAppContext();
+  const { journalEntries, variants, monthlyCalorieTargets, addJournalRecipeEntry } = useAppContext();
 
   const showForm = isCreating || Boolean(editingRecipe);
   const today = new Date();
   const todayKey = formatDateKey(today);
   const currentMonthKey = formatMonthKey(today.getFullYear(), today.getMonth());
-  const currentMonthGoal = monthlyCalorieGoals[currentMonthKey] ?? 1600;
+  const currentMonthTarget = monthlyCalorieTargets[currentMonthKey] ?? DEFAULT_MONTHLY_CALORIE_TARGET;
 
   const consumedToday = useMemo(
     () =>
@@ -32,7 +33,7 @@ export const RecetasPage = () => {
     [journalEntries, todayKey, variants],
   );
 
-  const remainingCalories = currentMonthGoal - consumedToday;
+  const remainingCalories = currentMonthTarget.goal - consumedToday;
 
   return (
     <PageContainer>

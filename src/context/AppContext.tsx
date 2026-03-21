@@ -1,4 +1,4 @@
-﻿import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from "react";
 import {
   AppData,
   CategoryNode,
@@ -6,12 +6,13 @@ import {
   IngredientFormValues,
   IngredientNode,
   IngredientVariant,
+  MonthlyCalorieTarget,
   Recipe,
   RecipeIngredient,
   VariantFormValues,
 } from "../types/models";
 import { loadAppData, saveAppData } from "../db/appRepository";
-import { DEFAULT_VARIANT_NAME, INITIAL_DATA, UNIT_OPTIONS } from "../utils/constants";
+import { DEFAULT_MONTHLY_CALORIE_TARGET, DEFAULT_VARIANT_NAME, INITIAL_DATA, UNIT_OPTIONS } from "../utils/constants";
 import { createId } from "../utils/id";
 import { collectCategoryAndDescendants } from "../utils/tree";
 
@@ -33,7 +34,7 @@ interface AppContextValue extends AppData {
   updateJournalIngredientEntry: (entryId: string, item: RecipeIngredient) => void;
   updateJournalRecipeEntry: (entryId: string, recipe: Recipe) => void;
   deleteJournalEntry: (entryId: string) => void;
-  setMonthlyCalorieGoal: (monthKey: string, goal: number) => void;
+  setMonthlyCalorieTarget: (monthKey: string, target: MonthlyCalorieTarget) => void;
   createEmptyRecipeIngredient: () => RecipeIngredient;
 }
 
@@ -163,7 +164,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 },
               };
             }),
-            monthlyCalorieGoals: current.monthlyCalorieGoals,
+            monthlyCalorieTargets: current.monthlyCalorieTargets,
           };
         });
       },
@@ -388,12 +389,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           journalEntries: current.journalEntries.filter((entry) => entry.id !== entryId),
         }));
       },
-      setMonthlyCalorieGoal: (monthKey, goal) => {
+      setMonthlyCalorieTarget: (monthKey, target) => {
         setData((current) => ({
           ...current,
-          monthlyCalorieGoals: {
-            ...current.monthlyCalorieGoals,
-            [monthKey]: goal,
+          monthlyCalorieTargets: {
+            ...current.monthlyCalorieTargets,
+            [monthKey]: {
+              goal: target.goal,
+              maintenance: target.maintenance,
+            },
           },
         }));
       },

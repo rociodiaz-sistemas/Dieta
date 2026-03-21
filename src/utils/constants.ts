@@ -1,4 +1,4 @@
-﻿import { AppData } from "../types/models";
+﻿import { AppData, MonthlyCalorieTarget } from "../types/models";
 import { createId } from "./id";
 
 const lacteosId = createId();
@@ -12,6 +12,10 @@ const lecheAlmendrasIngredientId = createId();
 const avenaInstantaneaIngredientId = createId();
 
 export const DEFAULT_VARIANT_NAME = "N/A";
+export const DEFAULT_MONTHLY_CALORIE_TARGET: MonthlyCalorieTarget = {
+  goal: 1600,
+  maintenance: 1900,
+};
 
 export const UNIT_OPTIONS = [
   "g",
@@ -115,5 +119,5 @@ export const INITIAL_DATA: AppData = {
   ],
   recipes: [],
   journalEntries: [],
-  monthlyCalorieGoals: {},
+  monthlyCalorieTargets: {},
 };

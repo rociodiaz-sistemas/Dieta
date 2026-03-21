@@ -17,6 +17,7 @@
 import { useMemo, useState } from "react";
 import { useAppContext } from "../../context/AppContext";
 import { calculateJournalEntryCalories } from "../../utils/calorieCalculations";
+import { DEFAULT_MONTHLY_CALORIE_TARGET } from "../../utils/constants";
 import { formatLongDate, formatMonthKey } from "../../utils/date";
 import { DailyIngredientEntryCard } from "./DailyIngredientEntryCard";
 import { DailyRecipeEntryCard } from "./DailyRecipeEntryCard";
@@ -28,7 +29,7 @@ interface DayDetailModalProps {
 }
 
 export const DayDetailModal = ({ dateKey, isOpen, onClose }: DayDetailModalProps) => {
-  const { journalEntries, recipes, variants, monthlyCalorieGoals, addJournalIngredientEntry, addJournalRecipeEntry } = useAppContext();
+  const { journalEntries, recipes, variants, monthlyCalorieTargets, addJournalIngredientEntry, addJournalRecipeEntry } = useAppContext();
   const [selectedRecipeId, setSelectedRecipeId] = useState("");
 
   const entries = useMemo(
@@ -50,8 +51,8 @@ export const DayDetailModal = ({ dateKey, isOpen, onClose }: DayDetailModalProps
     return formatMonthKey(year, month - 1);
   }, [dateKey]);
 
-  const dailyGoal = monthlyCalorieGoals[dateMonthKey] ?? 1600;
-  const remainingCalories = dailyGoal - totalCalories;
+  const monthTarget = monthlyCalorieTargets[dateMonthKey] ?? DEFAULT_MONTHLY_CALORIE_TARGET;
+  const remainingCalories = monthTarget.goal - totalCalories;
 
   if (!dateKey) {
     return null;
@@ -71,7 +72,10 @@ export const DayDetailModal = ({ dateKey, isOpen, onClose }: DayDetailModalProps
                 {entries.length} entrada{entries.length === 1 ? "" : "s"} registrada{entries.length === 1 ? "" : "s"}
               </Text>
               <Text fontSize="sm" color="gray.600">
-                Meta diaria del mes: {dailyGoal.toFixed(0)} kcal
+                Meta diaria del mes: {monthTarget.goal.toFixed(0)} kcal
+              </Text>
+              <Text fontSize="sm" color="gray.600">
+                Mantenimiento diario del mes: {monthTarget.maintenance.toFixed(0)} kcal
               </Text>
               <Text fontSize="sm" color={remainingCalories >= 0 ? "green.700" : "red.500"}>
                 Calorías restantes: {remainingCalories.toFixed(2)} kcal
