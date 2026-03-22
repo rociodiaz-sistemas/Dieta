@@ -1,4 +1,15 @@
-﻿import { Box, Button, Heading, HStack, Stack, Text } from "@chakra-ui/react";
+import {
+  Box,
+  Heading,
+  IconButton,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
+  SimpleGrid,
+  Stack,
+  Text,
+} from "@chakra-ui/react";
 import { useMemo } from "react";
 import { useAppContext } from "../../context/AppContext";
 import { Recipe } from "../../types/models";
@@ -23,7 +34,7 @@ export const RecipeList = ({
   remainingCalories,
   calorieAwareOnly,
 }: RecipeListProps) => {
-  const { recipes, ingredients, variants, deleteRecipe } = useAppContext();
+  const { recipes, variants, deleteRecipe } = useAppContext();
 
   const totals = useMemo(() => {
     return recipes.reduce<Record<string, number>>((accumulator, recipe) => {
@@ -49,7 +60,7 @@ export const RecipeList = ({
   if (recipes.length === 0) {
     return (
       <Box bg="white" borderWidth="1px" rounded="xl" p={6}>
-        <Text color="gray.500">Todavía no hay recetas guardadas.</Text>
+        <Text color="gray.500">Todav�a no hay recetas guardadas.</Text>
       </Box>
     );
   }
@@ -57,50 +68,54 @@ export const RecipeList = ({
   if (filteredRecipes.length === 0) {
     return (
       <Box bg="white" borderWidth="1px" rounded="xl" p={6}>
-        <Text color="gray.500">No hay recetas que coincidan con la búsqueda, el rango o las calorías restantes de hoy.</Text>
+        <Text color="gray.500">No hay recetas que coincidan con la b�squeda, el rango o las calor�as restantes de hoy.</Text>
       </Box>
     );
   }
 
   return (
-    <Stack spacing={4}>
+    <SimpleGrid columns={{ base: 1, sm: 2, lg: 3, xl: 4 }} spacing={4}>
       {filteredRecipes.map((recipe) => (
-        <Box key={recipe.id} bg="white" borderWidth="1px" rounded="xl" p={5}>
-          <Heading size="sm" mb={3}>
-            {recipe.nombre}
-          </Heading>
-          <Stack spacing={2} mb={4}>
-            {recipe.ingredientes.map((item) => {
-              const ingredient = ingredients.find((candidate) => candidate.id === item.ingredientId);
-              const variant = variants.find((candidate) => candidate.id === item.variantId);
-              const routeText = item.path.join(" → ");
+        <Box
+          key={recipe.id}
+          bg="white"
+          borderWidth="1px"
+          rounded="xl"
+          p={4}
+          minH="132px"
+          transition="all 0.18s ease"
+          _hover={{ borderColor: "green.200", shadow: "sm", transform: "translateY(-1px)" }}
+        >
+          <Stack spacing={4} h="full" justify="space-between">
+            <Box display="flex" justifyContent="space-between" alignItems="flex-start" gap={3}>
+              <Heading size="sm" color="gray.800" noOfLines={2} pr={1}>
+                {recipe.nombre}
+              </Heading>
 
-              return (
-                <Text key={item.id} fontSize="sm" color="gray.700">
-                  {routeText}
-                  {routeText ? " → " : ""}
-                  {ingredient?.nombre ?? "Ingrediente eliminado"}
-                  {variant ? ` (${variant.marca})` : ""} | {item.cantidad || 0} {item.unidad}
-                </Text>
-              );
-            })}
+              <Menu placement="bottom-end">
+                <MenuButton
+                  as={IconButton}
+                  aria-label={`Acciones para ${recipe.nombre}`}
+                  variant="ghost"
+                  size="sm"
+                  icon={<Box as="span" fontSize="xl" lineHeight="1">?</Box>}
+                />
+                <MenuList>
+                  <MenuItem onClick={() => onAddToToday(recipe.id)}>Agregar al d�a actual</MenuItem>
+                  <MenuItem onClick={() => onEdit(recipe)}>Editar</MenuItem>
+                  <MenuItem color="red.500" onClick={() => deleteRecipe(recipe.id)}>
+                    Eliminar
+                  </MenuItem>
+                </MenuList>
+              </Menu>
+            </Box>
+
+            <Text fontSize="lg" fontWeight="semibold" color="green.700">
+              {totals[recipe.id]?.toFixed(2) ?? "0.00"} kcal
+            </Text>
           </Stack>
-          <Text fontWeight="semibold" color="brand.700" mb={4}>
-            Total: {totals[recipe.id]?.toFixed(2) ?? "0.00"} calorías
-          </Text>
-          <HStack flexWrap="wrap">
-            <Button size="sm" colorScheme="green" onClick={() => onAddToToday(recipe.id)}>
-              Agregar al día actual
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => onEdit(recipe)}>
-              Editar
-            </Button>
-            <Button size="sm" variant="outline" colorScheme="red" onClick={() => deleteRecipe(recipe.id)}>
-              Eliminar
-            </Button>
-          </HStack>
         </Box>
       ))}
-    </Stack>
+    </SimpleGrid>
   );
 };
